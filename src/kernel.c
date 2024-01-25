@@ -29,4 +29,8 @@ void kernel_main(void) {
       terminal.color = vga_color_create(VGA_COLOR_LIGHT_GREY, c);
       terminal_putchar(' ');
   }
+
+  for (;;) {
+    asm ("hlt");
+  }
 }
