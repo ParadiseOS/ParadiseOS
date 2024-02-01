@@ -23,12 +23,21 @@ void terminal_init(usize width, usize height, u16 *buffer) {
     }
 }
 
+void terminal_scroll() {
+    for (usize r = 1; r < terminal.height; ++r) {
+        for (usize c = 0; c < terminal.width; ++c) {
+            terminal.buffer[(r - 1) * terminal.width + c] = terminal.buffer[r * terminal.width + c];
+        }
+    }
+}
+
 void terminal_putchar(u8 c) {
     if (c == '\n') {
         terminal.col = 0;
 
         if (++terminal.row == terminal.height) {
-            terminal.row = 0;
+            terminal.row--;
+            terminal_scroll();
         }
 
         return;
