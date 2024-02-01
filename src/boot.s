@@ -1,52 +1,50 @@
-    .set ALIGNPAGE, 1 << 0 // Align boot module to page boundaries
-    .set MEMINFO,   1 << 1 // Get info on available memory and memory map
-    .set VIDEOINFO, 1 << 2 // Get video mode info
+format ELF
 
-    .set TEXTMODE,   1 // EGA-standard text mode.
-    .set SIZENOPREF, 0 // Don't care value for graphics size
+ALIGNPAGE = 1 shl 0 ; Align boot modules to page boundaries
+MEMINFO =   1 shl 1 ; Get info on available memory and memory map
+VIDEOINFO = 1 shl 2 ; Get video info mode
 
-    .set FLAGS, VIDEOINFO | MEMINFO | ALIGNPAGE
+TEXTMODE =   1 ; EGA-standard text-mode
+SIZENOPREF = 1 ; Don't care value for size
 
-    // To adhere to the multiboot specification.
-    .set MAGIC,      0x1BADB002
-    .set CHECKSUM,   -(MAGIC + FLAGS)
+FLAGS = VIDEOINFO or MEMINFO or ALIGNPAGE
 
-    // So we can boot from mutliboot.
-    // https://www.gnu.org/software/grub/manual/multiboot/multiboot.html
-    .section .multiboot
-    .align 4
-    .long MAGIC
-    .long FLAGS
-    .long CHECKSUM
-    .skip 20
-    .long TEXTMODE
-    .long SIZENOPREF // width
-    .long SIZENOPREF // height
-    .long 0          // depth (always 0 in text mode)
+MAGIC =    0x1BADB002 ; Communicate that our kernel is indeed multiboot compatible
+CHECKSUM = -(MAGIC + FLAGS)
 
-    .section .bss
-    .global multiboot_info
-    .align 16
+; So multiboot can actually load our kernel.
+; https://www.gnu.org/software/grub/manual/multiboot/multiboot.html
+section ".multiboot" align 4
+    dd MAGIC
+    dd FLAGS
+    dd CHECKSUM
+    rb 20
+    dd TEXTMODE
+    dd SIZENOPREF ; width
+    dd SIZENOPREF ; height
+    dd 0          ; depth (always 0 in text mode)
+
+section ".bss" writeable align 16
+public multiboot_info
 multiboot_info:
-    .long 0
-    // Create a 16 KiB stack so our C kernel can function.
+    rd 1
+
+; Create a 16 KiB, word-aligned stack so our C kernel can function
 stack_bottom:
-    .skip 1024 * 16
+    align 16
+    rb 1024 * 16
 stack_top:
 
-    .section .text
-    .global _start
-    .type _start, @function
-_start:
-    mov $stack_top, %esp        // Set up a stack.
-    mov %ebx, [multiboot_info]  // Store multiboot info for the kernel.
+section ".text" executable
+extrn kernel_main
+public start as "_start"
+start:
+    mov esp, stack_top        ; Set up the stack
+    mov [multiboot_info], ebx ; Save multiboot info structure for our kernel
 
-    // TODO: Enable paging.
-    // TODO: Handle interrupts
+    call kernel_main
 
-    call kernel_main            // Ensure stack is 16-byte aligned before this
-
-    cli                         // Disable interrupts
-idle_loop:
-    hlt                         // Wait for non-maskable interrupt
-    jmp idle_loop
+    cli ; If we ever leave the kernel, just sit in an idle loop
+    @@:
+        hlt
+        jmp @b
