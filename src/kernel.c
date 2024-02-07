@@ -10,25 +10,33 @@ void kernel_main(void) {
 
     terminal_init(width, height, buffer);
 
-    terminal_write_string("Hello, Paradise!\n");
-    terminal_write_string("Multiboot flags: ");
-    terminal_print_hex(multiboot_info[MB_FLAGS_OFFSET]);
+    terminal_printf("Hello, Paradise!\n");
+    terminal_printf("Multiboot flags: %b\n", multiboot_info[MB_FLAGS_OFFSET]);
 
-    terminal_write_string("\nCharset:\n");
+    terminal_printf("Charset:\n");
     terminal.color = vga_color_create(VGA_COLOR_LIGHT_BLUE, VGA_COLOR_BLACK);
     for (int h = 0; h < 16; ++h) {
         for (int l = 0; l < 16; ++l) {
-            terminal_putchar(h << 4 | l);
+            terminal_printf("%c", h << 4 | l);
         }
-        terminal_putchar('\n');
+        terminal_printf("\n");
     }
     terminal.color = vga_color_create(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
 
-    terminal_write_string("Colors:\n");
+    terminal_printf("Colors:\n");
     for (int c = 0; c < 16; ++c) {
         terminal.color = vga_color_create(VGA_COLOR_LIGHT_GREY, c);
-        terminal_putchar(' ');
+        terminal_printf(" ");
     }
+
+    i32 a = -45;
+    u32 b = 70;
+    const char *message = "Hello!";
+
+    terminal.color = vga_color_create(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
+    terminal_printf("\n");
+    terminal_printf("printf Test: %u, %i, %u, %i, %x, %x, %b, %b, %s, %c, %%",
+                    a, a, b, b, a, b, a, b, message, *message);
 
     for (;;) {
         asm ("hlt");
