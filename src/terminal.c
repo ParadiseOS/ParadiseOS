@@ -1,4 +1,5 @@
 #include "terminal.h"
+#include <stdarg.h>
 
 Terminal terminal;
 
@@ -64,8 +65,93 @@ void terminal_write_string(const char *string) {
 const char HEX_DIGITS[] = "0123456789ABCDEF";
 
 void terminal_print_hex(u32 n) {
-    for (u32 i = 0; i < 8; ++i) {
+    u32 msb = 31 - __builtin_clz(n);
+    u32 msn = (msb + 4) & ~3; // most significant nibble
+    n <<= 32 - msn;
+
+    do {
         terminal_putchar(HEX_DIGITS[n >> 28]);
         n <<= 4;
+    } while (n);
+}
+
+void terminal_print_bin(u32 n) {
+    n <<= __builtin_clz(n); // put the msb at the most significant index
+
+    do {
+        terminal_putchar((n >> 31) + '0');
+        n <<= 1;
+    } while (n);
+}
+
+void terminal_print_int(u32 n, bool is_signed) {
+    char buffer[12];
+    i8 i = 0;
+
+    bool is_negative = FALSE;
+
+    if (is_signed && (i32) n < 0) {
+        n = -n;
+        is_negative = TRUE;
+    }
+
+    if (!n) {
+        buffer[i++] = '0';
+    }
+    else {
+        while (n) {
+            buffer[i++] = (n % 10) + '0';
+            n /= 10;
+        }
+    }
+
+    if (is_negative) {
+        buffer[i++] = '-';
+    }
+
+    for (i = i - 1; i >= 0; --i) {
+        terminal_putchar(buffer[i]);
+    }
+}
+
+void terminal_printf(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+
+    for (; *fmt; ++fmt) {
+        char c = *fmt;
+
+        if (c == '%')  {
+            ++fmt;
+
+            switch (*fmt) {
+            case 'u':
+                terminal_print_int(va_arg(args, u32), FALSE);
+                break;
+            case 'i':
+                terminal_print_int(va_arg(args, u32), TRUE);
+                break;
+            case 'x':
+                terminal_print_hex(va_arg(args, u32));
+                break;
+            case 'b':
+                terminal_print_bin(va_arg(args, u32));
+                break;
+            case 's':
+                terminal_write_string(va_arg(args, char *));
+                break;
+            case 'c':
+                terminal_putchar(va_arg(args, u32));
+                break;
+            case '%':
+                terminal_putchar('%');
+                break;
+            default:
+                break;
+            }
+        }
+        else {
+            terminal_putchar(c);
+        }
     }
 }
