@@ -38,6 +38,10 @@ void kernel_main(void) {
     terminal_printf("printf Test: %u, %i, %u, %i, %x, %x, %b, %b, %s, %c, %%",
                     a, a, b, b, a, b, a, b, message, *message);
 
+    #ifdef TESTS_ENABLED // Test Flag should be passed to build script
+        terminal_printf("\nTesting is enabled!");
+    #endif
+
     for (;;) {
         asm ("hlt");
     }

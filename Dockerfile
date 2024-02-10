@@ -47,4 +47,6 @@ RUN mkdir bin
 RUN mkdir -p paradise-os/boot/grub
 COPY docker-include/grub.cfg paradise-os/boot/grub
 
-CMD ./build.sh
+ARG TESTS_ENABLED
+
+CMD ["./build.sh"] 
