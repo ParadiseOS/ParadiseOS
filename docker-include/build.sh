@@ -4,8 +4,18 @@ set -e
 
 export PATH="/usr/app/cross-compiler/bin:$PATH"
 
+if [ "$TESTS_ENABLED" = "true" ]; then
+    TESTS_FLAG="-DTESTS_ENABLED"
+else
+    TESTS_FLAG=""
+fi
+
 for file in src/*.c; do
-    i686-elf-gcc -c "$file" -o "bin/$(basename -s .c $file).o" -std=gnu99 -ffreestanding -g -Wall -Wextra
+    if [ "$file" = "src/kernel.c" ]; then
+        i686-elf-gcc -c "$file" -o "bin/$(basename -s .c $file).o" -std=gnu99 -ffreestanding -g -Wall -Wextra $TESTS_FLAG
+    else
+        i686-elf-gcc -c "$file" -o "bin/$(basename -s .c $file).o" -std=gnu99 -ffreestanding -g -Wall -Wextra
+    fi
 done
 
 fasm src/boot.s bin/boot.o
