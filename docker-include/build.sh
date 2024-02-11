@@ -11,11 +11,7 @@ else
 fi
 
 for file in src/*.c; do
-    if [ "$file" = "src/kernel.c" ]; then
-        i686-elf-gcc -c "$file" -o "bin/$(basename -s .c $file).o" -std=gnu99 -ffreestanding -g -Wall -Wextra $TESTS_FLAG
-    else
-        i686-elf-gcc -c "$file" -o "bin/$(basename -s .c $file).o" -std=gnu99 -ffreestanding -g -Wall -Wextra
-    fi
+    i686-elf-gcc -c "$file" -o "bin/$(basename -s .c $file).o" -std=gnu99 -ffreestanding -g -Wall -Wextra $TESTS_FLAG
 done
 
 fasm src/boot.s bin/boot.o
