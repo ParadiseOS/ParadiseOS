@@ -39,6 +39,7 @@ void kernel_main(void) {
                     a, a, b, b, a, b, a, b, message, *message);
 
     #ifdef TESTS_ENABLED // Test Flag should be passed to build script
+        terminal.color = vga_color_create(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
         terminal_printf("\nTesting is enabled!");
     #endif
 
