@@ -41,23 +41,25 @@ void terminal_putchar(u8 c) {
         terminal.col = 0;
 
         if (++terminal.row == terminal.height) {
-            terminal.row--;
+            --terminal.row;
             terminal_scroll();
         }
 
         return;
     }
 
-    usize i = terminal.row * terminal.width + terminal.col;
-    terminal.buffer[i] = vga_entry_create(c, terminal.color);
-
-    if (++terminal.col == terminal.width) {
+    if (terminal.col >= terminal.width) {
         terminal.col = 0;
 
         if (++terminal.row == terminal.height) {
-            terminal.row = 0;
+            --terminal.row;
+            terminal_scroll();
         }
     }
+
+    usize i = terminal.row * terminal.width + terminal.col;
+    terminal.buffer[i] = vga_entry_create(c, terminal.color);
+    ++terminal.col;
 }
 
 void terminal_write_string(const char *string) {
