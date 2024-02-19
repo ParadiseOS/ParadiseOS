@@ -44,12 +44,14 @@ stack_top:
 section ".text" executable
 extrn kernel_main
 public start as "_start"
+public panic_handler
 start:
     mov esp, stack_top        ; Set up the stack
     mov [multiboot_info], ebx ; Save multiboot info structure for our kernel
 
     call kernel_main
 
+panic_handler:
     cli ; If we ever leave the kernel, just sit in an idle loop
     @@:
         hlt
