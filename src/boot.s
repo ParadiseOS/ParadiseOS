@@ -12,8 +12,9 @@ FLAGS = VIDEOINFO or MEMINFO or ALIGNPAGE
 MAGIC =    0x1BADB002 ; Communicate that our kernel is indeed multiboot compatible
 CHECKSUM = -(MAGIC + FLAGS)
 
+
 ; So multiboot can actually load our kernel.
-; https://www.gnu.org/software/grub/manual/multiboot/multiboot.html
+; https://www.gnu.org/software/grub/manual/multiboot/multiboot.html 
 section ".multiboot" align 4
     dd MAGIC
     dd FLAGS
@@ -24,7 +25,10 @@ section ".multiboot" align 4
     dd SIZENOPREF ; height
     dd 0          ; depth (always 0 in text mode)
 
+
+
 section ".bss" writeable align 16
+
 public multiboot_info
 multiboot_info:
     rd 1
@@ -33,7 +37,9 @@ multiboot_info:
 stack_bottom:
     align 16
     rb 1024 * 16
+public stack_top
 stack_top:
+
 
 section ".text" executable
 extrn kernel_main
@@ -48,3 +54,21 @@ start:
     @@:
         hlt
         jmp @b
+
+public load_gdt
+load_gdt:
+    ret
+    pop eax; get GDT address
+    lgdt [eax]
+    jmp 0x8:flush_gdt
+
+flush_gdt:
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+    ret
+
+    
