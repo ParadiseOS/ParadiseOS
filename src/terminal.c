@@ -62,7 +62,7 @@ void terminal_putchar(u8 c) {
     ++terminal.col;
 }
 
-void terminal_write_string(const char *string) {
+void terminal_print_string(const char *string) {
     for (const char *s = string; *s; ++s) {
         terminal_putchar(*s);
     }
@@ -175,7 +175,7 @@ void terminal_printf(const char *fmt, ...) {
                 terminal_print_bin(va_arg(args, u32));
                 break;
             case 's':
-                terminal_write_string(va_arg(args, char *));
+                terminal_print_string(va_arg(args, char *));
                 break;
             case 'c':
                 terminal_putchar(va_arg(args, u32));
