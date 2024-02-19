@@ -88,6 +88,18 @@ void terminal_print_hex(u32 n) {
     } while (i < msn);
 }
 
+void terminal_print_ptr(void *ptr) {
+    u32 n = (u32) ptr;
+
+    terminal_putchar('0');
+    terminal_putchar('x');
+
+    for (u32 i = 0; i < 8; ++i) {
+        terminal_putchar(HEX_DIGITS[n >> 28]);
+        n <<= 4;
+    }
+}
+
 void terminal_print_bin(u32 n) {
     if (n == 0) {
         terminal_putchar('0');
@@ -152,6 +164,9 @@ void terminal_printf(const char *fmt, ...) {
                 break;
             case 'i':
                 terminal_print_int(va_arg(args, u32), TRUE);
+                break;
+            case 'p':
+                terminal_print_ptr(va_arg(args, void *));
                 break;
             case 'x':
                 terminal_print_hex(va_arg(args, u32));
