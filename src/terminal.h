@@ -38,8 +38,6 @@ u16 vga_entry_create(u8 c, u8 color);
 
 void terminal_init(usize width, usize height, u16 *buffer);
 void terminal_putchar(u8 c);
-void terminal_write_string(const char *string);
-void terminal_print_hex(u32 n);
 void terminal_printf(const char *fmt, ...);
 
 #endif // TERMINAL_H_
