@@ -71,23 +71,39 @@ void terminal_write_string(const char *string) {
 const char HEX_DIGITS[] = "0123456789ABCDEF";
 
 void terminal_print_hex(u32 n) {
+    if (n == 0) {
+        terminal_putchar('0');
+        return;
+    }
+
     u32 msb = 31 - __builtin_clz(n);
     u32 msn = (msb + 4) & ~3; // most significant nibble
-    n <<= 32 - msn;
+    u32 i = 0;
+    n <<= 32 - msn; // put the msn at the most significant index
 
     do {
         terminal_putchar(HEX_DIGITS[n >> 28]);
         n <<= 4;
-    } while (n);
+        i += 4;
+    } while (i < msn);
 }
 
 void terminal_print_bin(u32 n) {
-    n <<= __builtin_clz(n); // put the msb at the most significant index
+    if (n == 0) {
+        terminal_putchar('0');
+        return;
+    }
+
+    u32 num_leading_zeros = __builtin_clz(n);
+    u32 msb = 32 - num_leading_zeros;
+    u32 i = 0;
+    n <<= num_leading_zeros; // put the msb at the most significant index
 
     do {
         terminal_putchar((n >> 31) + '0');
         n <<= 1;
-    } while (n);
+        ++i;
+    } while (i < msb);
 }
 
 void terminal_print_int(u32 n, bool is_signed) {
