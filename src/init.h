@@ -25,7 +25,7 @@
  * FLAG[10]  = Default Operation Size
  * FLAG[11]  = Granularity */
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed, aligned(8))) {
     u16 limit;
     u16 base_low;
     u8  base_mid;
