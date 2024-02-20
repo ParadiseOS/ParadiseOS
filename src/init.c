@@ -16,7 +16,7 @@ void set_entry(GdtEntry *entry, u32 base, u32 limit, u8 type, u8 flags){
 
 void init_gdt(){
     //Set null descriptor & zero out memory
-    for (int i=0; i<3; i++){
+    for (int i = 0; i < 3; i++){
         set_entry(&gdt[i], 0, 0,  0, 0);
     }
 
