@@ -2,12 +2,12 @@
 #include "init.h"
 
  GdtEntry gdt[3];
- GdtPointer p_gdt = {sizeof(gdt)-1, gdt};
+ GdtPointer p_gdt = {sizeof (gdt) - 1, gdt};
 
 extern void load_gdt(GdtPointer *);
 
 
-void set_entry(GdtEntry *entry, u32 base, u32 limit, u8 type, u8 flags){
+void set_entry(GdtEntry *entry, u32 base, u32 limit, u8 type, u8 flags) {
     entry->limit      = GET_LOWER_WORD(limit);
     entry->base_low   = GET_LOWER_WORD(base);
     entry->base_mid   = GET_MID_BASE(base);
@@ -16,12 +16,9 @@ void set_entry(GdtEntry *entry, u32 base, u32 limit, u8 type, u8 flags){
     entry->base_upper = GET_UPPER_BASE(base);
 }
 
-void init_gdt(){
+void init_gdt() {
     //Set null descriptor & zero out memory
-    for (int i = 0; i < 3; i++){
-        set_entry(&gdt[i], 0, 0,  0, 0);
-    }
-
+    for (int i = 0; i < 3; i++) set_entry(&gdt[i], 0, 0,  0, 0);
     //Code Descriptor
     set_entry(&gdt[1], 0, 0xFFFFFFFF, SEG_CODE_USER, FLAG_4k);
     //Data Descriptor
