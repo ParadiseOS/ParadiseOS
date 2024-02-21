@@ -59,10 +59,9 @@ panic_handler:
 
 public load_gdt
 load_gdt:
-    ret
-    pop eax; get GDT address
+    mov eax, [esp+0x4]; get GDT address
     lgdt [eax]
-    jmp 0x8:flush_gdt
+    jmp 0x08:flush_gdt
 
 flush_gdt:
     mov ax, 0x10

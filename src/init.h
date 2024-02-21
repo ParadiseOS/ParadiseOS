@@ -6,8 +6,8 @@
 #ifndef INIT_H_
 #define INIT_H_
 
-#define SEG_DATA_USER     0xF2
-#define SEG_CODE_USER     0xFA
+#define SEG_DATA_USER     0x92
+#define SEG_CODE_USER     0x9E
 #define FLAG_4k           0xC
 
 #define GET_LOWER_WORD(x)     (x & 0xFFFF)
@@ -37,13 +37,12 @@ typedef struct __attribute__((packed, aligned(8))) {
 
 typedef struct __attribute__((packed)) {
     u16 limit;
-    void *base;
+    GdtEntry *base;
 } GdtPointer;
 
 
 void set_entry(GdtEntry *entry, u32 base, u32 limit, u8 type, u8 flags);
 void init_gdt();
-void load_gdt(GdtPointer);
 
 #endif
 
