@@ -4,6 +4,8 @@
  GdtEntry gdt[3];
  GdtPointer p_gdt = {sizeof(gdt)-1, gdt};
 
+extern void load_gdt(GdtPointer *);
+
 
 void set_entry(GdtEntry *entry, u32 base, u32 limit, u8 type, u8 flags){
     entry->limit      = GET_LOWER_WORD(limit);
@@ -21,10 +23,10 @@ void init_gdt(){
     }
 
     //Code Descriptor
-    set_entry(&gdt[1], 0, 0xFFFFF, SEG_CODE_USER, FLAG_4k);
+    set_entry(&gdt[1], 0, 0xFFFFFFFF, SEG_CODE_USER, FLAG_4k);
     //Data Descriptor
-    set_entry(&gdt[2], 0, 0xFFFFF, SEG_DATA_USER, FLAG_4k);
+    set_entry(&gdt[2], 0, 0xFFFFFFFF, SEG_DATA_USER, FLAG_4k);
     //Load gdt into gdtr and flush previous segment registers
-    load_gdt(p_gdt);
+    load_gdt(&p_gdt);
 }
 
