@@ -7,7 +7,8 @@ extern const u32 *multiboot_info;
 extern const u32 *stack_top;
 extern const u32 *_start;
 
-extern GdtEntry gdt[3];
+extern DescriptorEntry gdt[3];
+extern DescriptorEntry idt[256];
 
 
 void kernel_main(void) {
@@ -32,9 +33,14 @@ void kernel_main(void) {
     terminal_printf("Hello, Paradise!\n");
 
     terminal_printf("Multiboot flags: %b\n", mb_flags);
+
     terminal_printf("Initializing GDT\n");
     init_gdt();
     terminal_printf("GDT Initialized\n");
+
+    terminal_printf("Initializing IDT\n");
+    init_idt();
+    terminal_printf("IDT Initialized\n");
 
     #ifdef TESTS_ENABLED // Test Flag should be passed to build script
         terminal_printf("Charset:\n");
@@ -94,6 +100,9 @@ void kernel_main(void) {
             break;
         }
     }
+    terminal_printf("CALLING INTERRUPT 69 :p \n");
+    __asm__("int $69");
+    terminal_printf("IM BACK\n");
 
     for (;;) {
         asm ("hlt");

@@ -57,6 +57,12 @@ panic_handler:
         hlt
         jmp @b
 
+public load_idt
+load_idt:
+    mov eax, [esp+0x4]; get GDT address
+    lidt [eax]
+    ret
+
 public load_gdt
 load_gdt:
     mov eax, [esp+0x4]; get GDT address
@@ -71,5 +77,12 @@ flush_gdt:
     mov gs, ax
     mov ss, ax
     ret
+
+extrn test_interrupt
+public test_int
+test_int:
+    call test_interrupt
+    iret
+
 
     
