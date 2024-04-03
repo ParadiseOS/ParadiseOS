@@ -10,39 +10,39 @@
 #define SEG_CODE_USER     0x9E
 #define FLAG_4k           0xC
 
+#define GET_THIRD_BYTE(x)     ((x >>16)  & 0xFF)
+#define GET_FOURTH_BYTE(x)    ((x >>24)  & 0xFF)
 #define GET_LOWER_WORD(x)     (x & 0xFFFF)
-#define GET_MID_BASE(x)       ((x >> 16) & 0xFF)
 #define GET_UPPER_BASE(x)     ((x >> 24) & 0xFF)
 #define GET_UPPER_LIMIT(x)    ((x >> 16) & 0xF)
 
-/* FLAG BITS:
- * FLAG[0:3] = Type
- * FLAG[4]   = S (code=0/data=1)
- * FLAG[5:6] = DPL (Privelage)
- * FLAG[7]   = Present
- * FLAG[8]   = Available
- * FLAG[9]   = 0
- * FLAG[10]  = Default Operation Size
- * FLAG[11]  = Granularity */
+typedef enum {
+    idt_TASK =  5,
+    idt_INT  = 14,
+    idt_TRAP = 15,
+} IDT_TYPES;
 
 typedef struct __attribute__((packed, aligned(8))) {
-    u16 limit;
-    u16 base_low;
-    u8  base_mid;
-    u8  type;
-    u8  flags; 
-    u8  base_upper;
+    u16 entry1;
+    u16 entry2;
+    u8  entry3;
+    u8  entry4;
+    u8  entry5; 
+    u8  entry6;
     
-} GdtEntry;
+} DescriptorEntry;
 
 typedef struct __attribute__((packed)) {
     u16 limit;
-    GdtEntry *base;
-} GdtPointer;
+    DescriptorEntry *base;
+} TablePointer;
 
 
-void set_entry(GdtEntry *entry, u32 base, u32 limit, u8 type, u8 flags);
+void set_entry_gdt(DescriptorEntry *entry, u32 base, u32 limit, u8 type, u8 flags);
+void set_entry(DescriptorEntry * entry, u16 entry1, u16 entry2, 
+               u8 entry3, u8 entry4, u8 entry5, u8 entry6);
 void init_gdt();
+void init_idt();
 
 #endif
 
