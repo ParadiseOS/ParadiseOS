@@ -46,6 +46,16 @@ stack_bottom:
 public stack_top
 stack_top:
 
+section ".pages" writeable align 1024 * 4
+
+; Create a page directory and page table, both must be page-aligned
+public page_directory_start
+page_directory_start:
+    rd 1024
+public page_tables_start
+page_tables_start:
+    rd 1024 * 12 ; Just allocate space for 12 tables for now
+
 
 section ".text" executable
 extrn kernel_main
@@ -92,3 +102,13 @@ rept 32 interrupt:0 {
         call interrupt_handler
         iret
 }
+
+public enable_paging
+enable_paging:
+    mov eax, page_directory_start
+    mov cr3, eax
+
+    mov eax, cr0
+    or eax, 0x80000000
+    mov cr0, eax
+    ret

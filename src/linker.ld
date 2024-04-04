@@ -21,4 +21,8 @@ SECTIONS {
         *(COMMON)
         *(.bss)
     }
+
+    .pages BLOCK(4k) : ALIGN(4k) {
+        *(.pages)
+    }
 }
