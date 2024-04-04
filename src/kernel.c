@@ -2,6 +2,7 @@
 #include "multiboot.h"
 #include "init.h"
 #include "error.h"
+#include "mem.h"
 
 extern const u32 *multiboot_info;
 extern const u32 *stack_top;
@@ -41,6 +42,19 @@ void kernel_main(void) {
     terminal_printf("Initializing IDT\n");
     init_idt();
     terminal_printf("IDT Initialized\n");
+
+    init_page_structures();
+    map_pages(0, 0, 256); // identity map lower memory
+    map_pages(0x200000, 0x200000, 256); // identity map our kernel code and data
+    enable_paging();
+    terminal_printf("Enabled paging\n");
+
+    // Testing that paging works. Here we remap an invalid address.
+    map_pages(0x694200, 0xFFFFFFFF, 1);
+    u8 *ptr = (u16 *) 0xFFFFFFFF; // this wouldn't work without paging
+
+    *ptr = 69;
+    terminal_printf("*ptr: %u\n", (u32) *ptr);
 
     #ifdef TESTS_ENABLED // Test Flag should be passed to build script
         terminal_printf("Charset:\n");
