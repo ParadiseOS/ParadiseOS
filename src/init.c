@@ -53,8 +53,8 @@ void init_gdt() {
 
 void init_idt() {
    for(int i = 0; i < 256; i++) set_entry(&idt[i], 0, 0, 0, 0, 0, 0);
-   set_entry_idt(&idt[69], (u32)test_int, idt_TRAP);
-   set_entry_idt(&idt[13], (u32)general_protection, idt_INT);
+   set_entry_idt(&idt[69], (u32) test_int, idt_TRAP);
+   set_entry_idt(&idt[13], (u32) general_protection, idt_INT);
    load_idt(&p_idt);
 }
 

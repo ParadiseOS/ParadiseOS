@@ -101,7 +101,7 @@ void kernel_main(void) {
         }
     }
     terminal_printf("CALLING INTERRUPT 69 :p \n");
-    __asm__("int $69");
+    asm  ("int $69");
     terminal_printf("IM BACK\n");
 
     for (;;) {

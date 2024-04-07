@@ -10,10 +10,9 @@
 #define SEG_CODE_USER     0x9E
 #define FLAG_4k           0xC
 
-#define GET_THIRD_BYTE(x)     ((x >>16)  & 0xFF)
-#define GET_FOURTH_BYTE(x)    ((x >>24)  & 0xFF)
+#define GET_THIRD_BYTE(x)     ((x >> 16)  & 0xFF)
+#define GET_FOURTH_BYTE(x)    ((x >> 24 ) & 0xFF)
 #define GET_LOWER_WORD(x)     (x & 0xFFFF)
-#define GET_UPPER_BASE(x)     ((x >> 24) & 0xFF)
 #define GET_UPPER_LIMIT(x)    ((x >> 16) & 0xF)
 
 typedef enum {
