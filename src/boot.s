@@ -59,7 +59,7 @@ panic_handler:
 
 public load_idt
 load_idt:
-    mov eax, [esp+0x4]; get GDT address
+    mov eax, [esp+0x4]
     lidt [eax]
     ret
 
