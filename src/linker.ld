@@ -22,7 +22,7 @@ SECTIONS {
         *(.bss)
     }
 
-    .pages BLOCK(4k) : ALIGN(4k) {
+    .pages BLOCK(4K) : ALIGN(4K) {
         *(.pages)
     }
 }
