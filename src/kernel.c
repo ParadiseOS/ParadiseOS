@@ -100,9 +100,8 @@ void kernel_main(void) {
             break;
         }
     }
-    terminal_printf("CALLING INTERRUPT 69 :p \n");
-    asm  ("int $69");
-    terminal_printf("IM BACK\n");
+
+    asm ("ud2");
 
     for (;;) {
         asm ("hlt");
