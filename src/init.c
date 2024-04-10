@@ -1,8 +1,9 @@
 #include "types.h"
 #include "init.h"
-#include "interrupt.h"
 
+extern u32 cpu_interrupts;
 
+const u32 *cpu_interrupt_table = &cpu_interrupts;
 
 DescriptorEntry gdt[3];
 TablePointer p_gdt = {sizeof (gdt) - 1, gdt};
@@ -53,8 +54,11 @@ void init_gdt() {
 
 void init_idt() {
    for(int i = 0; i < 256; i++) set_entry(&idt[i], 0, 0, 0, 0, 0, 0);
-   set_entry_idt(&idt[69], (u32) test_int, idt_TRAP);
-   set_entry_idt(&idt[13], (u32) general_protection, idt_INT);
+
+   for (int i = 0; i < 32; ++i) {
+       set_entry_idt(&idt[i], cpu_interrupt_table[i], idt_TRAP);
+   }
+
    load_idt(&p_idt);
 }
 

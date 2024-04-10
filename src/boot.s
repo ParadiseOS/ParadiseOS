@@ -29,6 +29,12 @@ section ".multiboot" align 4
 
 section ".bss" writeable align 16
 
+public cpu_interrupts
+cpu_interrupts:
+rept 32 interrupt:0 {
+    dd interrupt_wrapper_#interrupt
+}
+
 public multiboot_info
 multiboot_info:
     rd 1
@@ -78,11 +84,11 @@ flush_gdt:
     mov ss, ax
     ret
 
-extrn test_interrupt
-public test_int
-test_int:
-    call test_interrupt
-    iret
-
-
-    
+extrn interrupt_handler
+rept 32 interrupt:0 {
+    public interrupt_wrapper_#interrupt
+    interrupt_wrapper_#interrupt:
+        push interrupt
+        call interrupt_handler
+        iret
+}
