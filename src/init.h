@@ -91,7 +91,6 @@ void set_entry(DescriptorEntry * entry, u16 entry1, u16 entry2,
                u8 entry3, u8 entry4, u8 entry5, u8 entry6);
 void init_gdt();
 void init_idt();
-extern void load_tss(Tss *);
 
 #endif
 
