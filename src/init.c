@@ -5,7 +5,7 @@ extern u32 cpu_interrupts;
 
 const u32 *cpu_interrupt_table = &cpu_interrupts;
 
-DescriptorEntry gdt[3];
+DescriptorEntry gdt[128];
 TablePointer p_gdt = {sizeof (gdt) - 1, gdt};
 
 DescriptorEntry idt[256];
@@ -43,12 +43,11 @@ void set_entry(DescriptorEntry * entry, u16 entry1, u16 entry2,
 
 void init_gdt() {
     //Set null descriptor & zero out memory
-    for (int i = 0; i < 3; i++) set_entry_gdt(&gdt[i], 0, 0,  0, 0);
-    //Code Descriptor
-    set_entry_gdt(&gdt[1], 0, 0xFFFFFFFF, SEG_CODE_USER, FLAG_4k);
-    //Data Descriptor
-    set_entry_gdt(&gdt[2], 0, 0xFFFFFFFF, SEG_DATA_USER, FLAG_4k);
-    //Load gdt into gdtr and flush previous segment registers
+    for (int i = 0; i < 128; i++) set_entry_gdt(&gdt[i], 0, 0,  0, 0);
+    set_entry_gdt(&gdt[1], 0, 0xFFFFFFFF, (gdt_KERNEL_CODE_DATA << 4) | gdt_XR, gdt_4K32);
+    set_entry_gdt(&gdt[2], 0, 0xFFFFFFFF, (gdt_KERNEL_CODE_DATA << 4) | gdt_RW, gdt_4K32);
+    set_entry_gdt(&gdt[3], 0, 0xFFFFFFFF, (gdt_USER_CODE_DATA   << 4) | gdt_XR, gdt_4K32);
+    set_entry_gdt(&gdt[4], 0, 0xFFFFFFFF, (gdt_USER_CODE_DATA   << 4) | gdt_RW, gdt_4K32);
     load_gdt(&p_gdt);
 }
 
