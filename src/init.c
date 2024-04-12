@@ -1,4 +1,6 @@
 #include "types.h"
+#include "terminal.h"
+#include "processes.h"
 #include "init.h"
 
 extern u32 cpu_interrupts;
@@ -10,6 +12,8 @@ TablePointer p_gdt = {sizeof (gdt) - 1, gdt};
 
 DescriptorEntry idt[256];
 TablePointer p_idt = {sizeof (idt) - 1, idt};
+
+Tss initial_tss;
 
 extern void load_gdt(TablePointer *);
 extern void load_idt(TablePointer *);
@@ -48,6 +52,7 @@ void init_gdt() {
     set_entry_gdt(&gdt[2], 0, 0xFFFFFFFF, (gdt_KERNEL_CODE_DATA << 4) | gdt_RW, gdt_4K32);
     set_entry_gdt(&gdt[3], 0, 0xFFFFFFFF, (gdt_USER_CODE_DATA   << 4) | gdt_XR, gdt_4K32);
     set_entry_gdt(&gdt[4], 0, 0xFFFFFFFF, (gdt_USER_CODE_DATA   << 4) | gdt_RW, gdt_4K32);
+    set_entry_gdt(&gdt[5], (u32) &initial_tss, 0x67, (gdt_KERNEL_SYSTEM   << 4)  | gdts_TSS32A,gdt_4K16 );
     load_gdt(&p_gdt);
 }
 
@@ -60,4 +65,6 @@ void init_idt() {
 
    load_idt(&p_idt);
 }
+
+
 

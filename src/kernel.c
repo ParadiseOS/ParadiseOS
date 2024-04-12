@@ -3,6 +3,7 @@
 #include "init.h"
 #include "error.h"
 #include "mem.h"
+#include "processes.h"
 
 extern const u32 *multiboot_info;
 extern const u32 *stack_top;
@@ -10,6 +11,7 @@ extern const u32 *_start;
 
 extern DescriptorEntry gdt[3];
 extern DescriptorEntry idt[256];
+extern Tss initial_tss;
 
 
 void kernel_main(void) {
@@ -48,6 +50,10 @@ void kernel_main(void) {
     map_pages(0x200000, 0x200000, 256); // identity map our kernel code and data
     enable_paging();
     terminal_printf("Enabled paging\n");
+
+    terminal_printf("Loading Initial TSS into GDT\n");
+    load_tss(&initial_tss);
+    terminal_printf("Loaded TSS\n");
 
     // Testing that paging works. Here we remap an invalid address.
     map_pages(0x694200, 0xFFFFFFFF, 1);
@@ -114,6 +120,7 @@ void kernel_main(void) {
             break;
         }
     }
+
 
     asm ("ud2");
 
