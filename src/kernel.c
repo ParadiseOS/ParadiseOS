@@ -52,8 +52,9 @@ void kernel_main(void) {
     terminal_printf("Enabled paging\n");
 
     terminal_printf("Loading Initial TSS into GDT\n");
-    load_tss(&initial_tss);
+    u32 eax = load_tss(&initial_tss);
     terminal_printf("Loaded TSS\n");
+    terminal_printf("EAX: %u\n", eax);
 
     // Testing that paging works. Here we remap an invalid address.
     map_pages(0x694200, 0xFFFFFFFF, 1);
