@@ -46,7 +46,6 @@ void set_entry(DescriptorEntry * entry, u16 entry1, u16 entry2,
 }
 
 void init_gdt() {
-    //Set null descriptor & zero out memory
     for (int i = 0; i < 128; i++) set_entry_gdt(&gdt[i], 0, 0,  0, 0);
     set_entry_gdt(&gdt[1], 0, 0xFFFFFFFF, (gdt_KERNEL_CODE_DATA << 4) | gdt_XR, gdt_4K32);
     set_entry_gdt(&gdt[2], 0, 0xFFFFFFFF, (gdt_KERNEL_CODE_DATA << 4) | gdt_RW, gdt_4K32);
