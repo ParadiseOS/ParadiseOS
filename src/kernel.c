@@ -58,7 +58,7 @@ void kernel_main(void) {
 
     // Testing that paging works. Here we remap an invalid address.
     map_pages(0x694200, 0xFFFFFFFF, 1);
-    u8 *ptr = (u16 *) 0xFFFFFFFF; // this wouldn't work without paging
+    u8 *ptr = (u8 *) 0xFFFFFFFF; // this wouldn't work without paging
 
     *ptr = 69;
     terminal_printf("*ptr: %u\n", (u32) *ptr);
