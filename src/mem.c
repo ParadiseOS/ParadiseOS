@@ -38,7 +38,7 @@ void map_page(u32 physical_addr, u32 virtual_addr) {
         current_table += 1;
     }
 
-    u32 *table = page_directory[directory_offset] & 0xFFFFF000;
+    u32 *table = (u32 *) (page_directory[directory_offset] & 0xFFFFF000);
 
     if (table[table_offset])
         KERNEL_ASSERT(0);

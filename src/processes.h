@@ -44,5 +44,6 @@ typedef struct __attribute__((packed, aligned(4096))) {
     u16 io_base;
 } Tss;
 
+extern u32 load_tss(Tss *);
 
 #endif
