@@ -2,6 +2,7 @@
 #include "terminal.h"
 #include "processes.h"
 #include "init.h"
+#include "error.h"
 
 extern u32 cpu_interrupts;
 
@@ -55,12 +56,19 @@ void init_gdt() {
     load_gdt(&p_gdt);
 }
 
+void syscall() {
+    terminal_printf("syscalled!\n");
+    KERNEL_ASSERT(FALSE);
+}
+
 void init_idt() {
    for(int i = 0; i < 256; i++) set_entry(&idt[i], 0, 0, 0, 0, 0, 0);
 
    for (int i = 0; i < 32; ++i) {
        set_entry_idt(&idt[i], cpu_interrupt_table[i], idt_TRAP);
    }
+
+   set_entry_idt(&idt[0x80], (u32) syscall, idt_TRAP);
 
    load_idt(&p_idt);
 }
