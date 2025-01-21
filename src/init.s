@@ -26,8 +26,15 @@ rept 32 interrupt:0 {
     interrupt_wrapper_#interrupt:
         push interrupt
         call interrupt_handler
+        add esp, 0x04
         iret
 }
+
+extrn syscall_handler
+public syscall_wrapper
+syscall_wrapper:
+    call syscall_handler
+    iret
 
 public load_idt
 load_idt:
