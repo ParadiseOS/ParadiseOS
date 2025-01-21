@@ -72,4 +72,5 @@ void kernel_test(MultibootInfo *mb_info) {
     }
 
     asm ("int $0x80"); // test our interrupt handler
+    asm ("ud2");
 }

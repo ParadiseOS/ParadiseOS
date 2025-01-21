@@ -18,6 +18,7 @@ Tss initial_tss;
 
 extern void load_gdt(TablePointer *);
 extern void load_idt(TablePointer *);
+extern void syscall_wrapper();
 
 void set_entry_gdt(DescriptorEntry *entry, u32 base, u32 limit, u8 type, u8 flags) {
     entry->entry1 = GET_LOWER_WORD(limit);
@@ -56,9 +57,8 @@ void init_gdt() {
     load_gdt(&p_gdt);
 }
 
-void syscall() {
+void syscall_handler() {
     terminal_printf("syscalled!\n");
-    KERNEL_ASSERT(FALSE);
 }
 
 void init_idt() {
@@ -68,10 +68,7 @@ void init_idt() {
        set_entry_idt(&idt[i], cpu_interrupt_table[i], idt_TRAP);
    }
 
-   set_entry_idt(&idt[0x80], (u32) syscall, idt_TRAP);
+   set_entry_idt(&idt[0x80], (u32) syscall_wrapper, idt_TRAP);
 
    load_idt(&p_idt);
 }
-
-
-
