@@ -68,7 +68,7 @@ void init_idt() {
        set_entry_idt(&idt[i], cpu_interrupt_table[i], idt_TRAP);
    }
 
-   set_entry_idt(&idt[0x80], (u32) syscall_wrapper, idt_TRAP);
+   set_entry_idt(&idt[0x80], (u32) syscall_wrapper, idt_INT);
 
    load_idt(&p_idt);
 }
