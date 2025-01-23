@@ -1,7 +1,7 @@
 #ifndef MEM_H_
 #define MEM_H_
 
-#include "types.h"
+#include "lib/types.h"
 
 extern void enable_paging();
 

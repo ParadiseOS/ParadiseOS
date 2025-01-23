@@ -1,10 +1,10 @@
-#include "terminal.h"
-#include "multiboot.h"
+#include "terminal/terminal.h"
+#include "boot/multiboot.h"
 #include "init.h"
-#include "error.h"
-#include "mem.h"
-#include "processes.h"
-#include "testing.h"
+#include "lib/error.h"
+#include "memory/mem.h"
+#include "process/processes.h"
+#include "tests/testing.h"
 
 extern const u32 *multiboot_info;
 extern const u32 *stack_top;

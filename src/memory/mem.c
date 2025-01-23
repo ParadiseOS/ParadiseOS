@@ -1,5 +1,5 @@
 #include "mem.h"
-#include "error.h"
+#include "lib/error.h"
 
 extern u32 page_directory_start;
 extern u32 page_tables_start;

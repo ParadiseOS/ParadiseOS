@@ -1,7 +1,7 @@
 #ifndef IO_H_
 #define IO_H_
 
-#include "types.h"
+#include "lib/types.h"
 
 #define PORT_COM1 0x3F8
 

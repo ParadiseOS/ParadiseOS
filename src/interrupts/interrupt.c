@@ -1,5 +1,5 @@
-#include "error.h"
-#include "terminal.h"
+#include "lib/error.h"
+#include "terminal/terminal.h"
 
 const char *INTERRUPT_NAMES[32] = {
     "Division Error",

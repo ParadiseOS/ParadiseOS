@@ -1,7 +1,7 @@
 #ifndef PROCESS_H_
 #define PROCESS_H_
 
-#include "types.h"
+#include "lib/types.h"
 
 typedef struct __attribute__((packed, aligned(4096))) {
     u16 prev_task_link;

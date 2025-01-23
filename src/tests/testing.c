@@ -1,10 +1,10 @@
 #include "testing.h"
-#include "multiboot.h"
-#include "mem.h"
-#include "types.h"
-#include "terminal.h"
-#include "error.h"
-#include "io.h"
+#include "boot/multiboot.h"
+#include "memory/mem.h"
+#include "lib/types.h"
+#include "terminal/terminal.h"
+#include "lib/error.h"
+#include "drivers/serial/io.h"
 
 void kernel_test(MultibootInfo *mb_info) {
     terminal_printf("\nTesting is enabled!\n");
