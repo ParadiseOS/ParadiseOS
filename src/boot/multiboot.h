@@ -3,7 +3,7 @@
 
 // See https://www.gnu.org/software/grub/manual/multiboot/multiboot.html#Boot-information-format
 
-#include "types.h"
+#include "lib/types.h"
 
 #define MMAP_AVAILABLE 1
 #define MMAP_RESERVED  2

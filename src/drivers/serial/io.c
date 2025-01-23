@@ -1,5 +1,5 @@
 #include "io.h"
-#include "error.h"
+#include "lib/error.h"
 
 void serial_init() {
     outb(PORT_COM1 + 1, 0x00); // Disable all interrupts

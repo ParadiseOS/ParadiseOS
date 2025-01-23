@@ -1,8 +1,8 @@
-#include "types.h"
-#include "terminal.h"
-#include "processes.h"
+#include "lib/types.h"
+#include "terminal/terminal.h"
+#include "process/processes.h"
 #include "init.h"
-#include "error.h"
+#include "lib/error.h"
 
 extern u32 cpu_interrupts;
 

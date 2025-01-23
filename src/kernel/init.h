@@ -6,7 +6,7 @@
 #ifndef INIT_H_
 #define INIT_H_
 
-#include "processes.h"
+#include "process/processes.h"
 
 #define GET_FIRST_BYTE(x)     (x & 0xFF)
 #define GET_SECOND_BYTE(x)    ((x >>  8)  & 0xFF) 

@@ -10,15 +10,18 @@ else
     TESTS_FLAG=""
 fi
 
-for file in src/*.c; do
-    i686-elf-gcc -c "$file" -o "bin/$(basename -s .c $file).o" -std=gnu99 -ffreestanding -g -Wall -Wextra $TESTS_FLAG
+
+find src -type f -name "*.c" | while read -r file; do
+    output="bin/$(basename -s .c "$file").o"
+    i686-elf-gcc -c "$file" -o "$output" -std=gnu99 -ffreestanding -g -Wall -Wextra -Isrc $TESTS_FLAG
 done
 
-for file in src/*.s; do
-    fasm "$file" "bin/$(basename -s .s $file).s.o"
+find src -type f -name "*.s" | while read -r file; do
+    output="bin/$(basename -s .s "$file").s.o"
+    fasm "$file" "$output"
 done
 
-i686-elf-gcc -T src/linker.ld -o build/paradise-os.bin -ffreestanding -nostdlib bin/*.o -lgcc
+i686-elf-gcc -T src/boot/linker.ld -o build/paradise-os.bin -ffreestanding -nostdlib bin/*.o -lgcc
 
 if ! grub-file --is-x86-multiboot build/paradise-os.bin; then
     echo "Failed to build bootable cdrom: paradise-os.bin is not multiboot"
