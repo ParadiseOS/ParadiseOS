@@ -4,6 +4,7 @@
 #include "types.h"
 #include "terminal.h"
 #include "error.h"
+#include "io.h"
 
 void kernel_test(MultibootInfo *mb_info) {
     terminal_printf("\nTesting is enabled!\n");
@@ -70,6 +71,13 @@ void kernel_test(MultibootInfo *mb_info) {
             break;
         }
     }
+
+    serial_init();
+    serial_write('H');
+    serial_write('e');
+    serial_write('l');
+    serial_write('l');
+    serial_write('o');
 
     asm ("int $0x80"); // test our interrupt handler
     asm ("ud2");
