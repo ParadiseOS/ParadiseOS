@@ -10,10 +10,7 @@ extern const u32 *multiboot_info;
 extern const u32 *stack_top;
 extern const u32 *_start;
 
-extern DescriptorEntry gdt[3];
-extern DescriptorEntry idt[256];
 extern Tss initial_tss;
-
 
 void kernel_main(void) {
     MultibootInfo *mb_info = (MultibootInfo *) multiboot_info;
