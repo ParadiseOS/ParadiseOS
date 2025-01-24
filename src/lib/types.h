@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+typedef uint64_t u64;
+typedef int64_t  i64;
 typedef uint32_t usize;
 typedef int32_t  isize;
 typedef uint32_t u32;
