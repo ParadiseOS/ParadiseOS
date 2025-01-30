@@ -69,31 +69,12 @@ enable_paging:
 
 public load_tss
 load_tss:
-    mov eax, [esp+0x4]
-    mov [eax+0x04], esp
-    mov word [eax+0x08], 0x10
-    mov edx, cr3
-    mov [eax+0x1C], edx
-    xor edx, edx
-    mov dword [eax+0x20], check_initialized
-    pushf
-    pop edx
-    mov dword [eax+0x24], edx
-    xor edx, edx
-    mov dword [eax+0x28], 1
-    mov [eax+0x2C], ecx
-    mov [eax+0x30], edx
-    mov [eax+0x34], ebx
-    mov [eax+0x38], esp
-    mov [eax+0x3C], ebp
-    mov [eax+0x40], esi
-    mov [eax+0x44], edi
-    mov [eax+0x48], ES
-    mov [eax+0x4C], CS
-    mov [eax+0x50], SS
-    mov [eax+0x54], DS
-    mov [eax+0x58], FS
-    mov [eax+0x5C], GS
-    jmp 0x28:0x0
-check_initialized:
+    mov ax, [esp+0x4]
+    ltr ax
+    ret
+
+public get_privilege_level
+get_privilege_level:
+    mov ax, cs
+    and ax, 3
     ret
