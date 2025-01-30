@@ -1,3 +1,4 @@
+#include "kernel.h"
 #include "terminal/terminal.h"
 #include "boot/multiboot.h"
 #include "init.h"
@@ -7,10 +8,15 @@
 #include "tests/testing.h"
 
 extern const u32 *multiboot_info;
-extern const u32 *stack_top;
-extern const u32 *_start;
 
-extern Tss initial_tss;
+void usermode_function() {
+    terminal_printf("Usermode!\n");
+    terminal_printf("CPL: %u\n", get_privilege_level());
+    asm ("int $0x80");
+    for (;;) {
+        asm ("nop");
+    }
+}
 
 void kernel_main(void) {
     MultibootInfo *mb_info = (MultibootInfo *) multiboot_info;
@@ -43,20 +49,22 @@ void kernel_main(void) {
     init_idt();
     terminal_printf("IDT Initialized\n");
 
+    terminal_printf("Initializing TSS\n");
+    init_tss();
+    terminal_printf("TSS Initialized\n");
+
     init_page_structures();
     map_pages(0, 0, 256); // identity map lower memory
     map_pages(0x200000, 0x200000, 256); // identity map our kernel code and data
     enable_paging();
     terminal_printf("Enabled paging\n");
 
-    terminal_printf("Loading Initial TSS into GDT\n");
-    u32 eax = load_tss(&initial_tss);
-    terminal_printf("Loaded TSS\n");
-    terminal_printf("EAX: %u\n", eax);
-
 #ifdef TESTS_ENABLED // Test Flag should be passed to build script
     kernel_test(mb_info);
 #endif
+
+    terminal_printf("CPL: %u\n", get_privilege_level());
+    jump_usermode(usermode_function);
 
     for (;;) {
         asm ("hlt");

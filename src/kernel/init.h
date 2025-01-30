@@ -1,13 +1,17 @@
 #ifndef INIT_H_
 #define INIT_H_
 
-
 #include "lib/types.h"
 
 /* ParadiseOS            Initialization
  * This file contains the initialization structures and constants.
  * These constants are specifically used in the IDT and the GDT.
  */
+
+typedef enum {
+    dpl_User   = 3,
+    dpl_Kernel = 0,
+} DescriptorPrivilegeLevel;
 
 /* Used for FLAG values for the segment descriptor stored in the GDT.
  *    - 4k Granularity:          The segment limit is (4096 * limit) bytes
@@ -122,5 +126,8 @@ typedef struct { u64 value; } GateDescriptor;
 
 void init_gdt();
 void init_idt();
+void init_tss();
+
+extern u8 get_privilege_level();
 
 #endif

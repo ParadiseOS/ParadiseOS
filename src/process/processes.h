@@ -3,6 +3,8 @@
 
 #include "lib/types.h"
 
+#define TSS_SIZE 104
+
 typedef struct __attribute__((packed, aligned(4096))) {
     u16 prev_task_link;
     u16 reserved1;
@@ -44,6 +46,6 @@ typedef struct __attribute__((packed, aligned(4096))) {
     u16 io_base;
 } Tss;
 
-extern u32 load_tss(Tss *);
+extern __attribute__((noreturn)) void jump_usermode(void *f);
 
 #endif
