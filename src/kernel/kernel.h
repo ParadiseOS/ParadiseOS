@@ -3,6 +3,6 @@
 
 #include "lib/types.h"
 
-extern const u32 *stack_top;
+extern const u32 *kernel_stack;
 
 #endif // KERNEL_H_

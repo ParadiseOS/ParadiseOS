@@ -6,6 +6,7 @@
 #include "memory/mem.h"
 #include "process/processes.h"
 #include "tests/testing.h"
+#include "drivers/serial/io.h"
 
 extern const u32 *multiboot_info;
 
@@ -36,7 +37,6 @@ void kernel_main(void) {
 
     KERNEL_ASSERT(mb_info->framebuffer_addr_hi == 0);
 
-
     terminal_printf("Hello, Paradise!\n");
 
     terminal_printf("Multiboot flags: %b\n", mb_flags);
@@ -58,6 +58,8 @@ void kernel_main(void) {
     map_pages(0x200000, 0x200000, 256); // identity map our kernel code and data
     enable_paging();
     terminal_printf("Enabled paging\n");
+
+    serial_init();
 
 #ifdef TESTS_ENABLED // Test Flag should be passed to build script
     kernel_test(mb_info);

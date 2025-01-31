@@ -85,7 +85,8 @@ void init_tss() {
     pmemset(&initial_tss, 0, sizeof (initial_tss));
 
     initial_tss.ss0 = 0x10; // kernel data GDT entry
-    initial_tss.esp0 = (u32) stack_top;
+    initial_tss.esp0 = (u32) kernel_stack;
     initial_tss.io_base = TSS_SIZE;
+
     load_tss(0x28); // TSS GDT entry
 }
