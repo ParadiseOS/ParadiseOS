@@ -72,7 +72,6 @@ void kernel_test(MultibootInfo *mb_info) {
         }
     }
 
-    serial_init();
     serial_write('H');
     serial_write('e');
     serial_write('l');

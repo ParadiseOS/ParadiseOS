@@ -24,29 +24,34 @@ section ".multiboot" align 4
     dd SIZENOPREF ; height
     dd 0          ; depth (always 0 in text mode)
 
-section ".bss" writeable align 16
+section ".data" align 16
 
 public multiboot_info
 multiboot_info:
+    rd 1
+
+public kernel_stack
+kernel_stack:
     rd 1
 
 ; Create a 16 KiB, word-aligned stack so our C kernel can function
 stack_bottom:
     align 16
     rb 1024 * 16
-public stack_top
 stack_top:
 
 section ".text" executable
+
 extrn kernel_main
 public start as "_start"
-public panic_handler
 start:
     mov esp, stack_top        ; Set up the stack
     mov [multiboot_info], ebx ; Save multiboot info structure for our kernel
+    mov [kernel_stack], esp   ; Save the kernel stack
 
     call kernel_main
 
+public panic_handler
 panic_handler:
     cli ; If we ever leave the kernel, just sit in an idle loop
     @@:

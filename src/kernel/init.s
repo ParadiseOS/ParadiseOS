@@ -8,7 +8,7 @@ rept 32 interrupt:0 {
     dd interrupt_wrapper_#interrupt
 }
 
-section ".pages" writeable align 1024 * 4
+section ".pages" writeable align 4096
 
 ; Create a page directory and page table, both must be page-aligned
 public page_directory_start
