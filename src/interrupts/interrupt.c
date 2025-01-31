@@ -2,10 +2,13 @@
 #include "kernel/init.h"
 #include "lib/error.h"
 #include "terminal/terminal.h"
+#include "drivers/keyboard/keyboard.h"
+#include "lib/util.h"
 
 extern u32 cpu_interrupts;
 
 extern void load_idt(TablePointer *);
+extern void keyboard_wrapper();
 extern void syscall_wrapper();
 
 const u32 *cpu_interrupt_table = &cpu_interrupts;
@@ -29,6 +32,10 @@ GateDescriptor make_gate_descriptor(u32 handler, u8 type, u8 privilege_level) {
     return (GateDescriptor) { descriptor };
 }
 
+void keyboard_handler() {
+    key_press();
+}
+
 void syscall_handler() {
     terminal_printf("syscalled!\n");
     terminal_printf("CPL: %u\n", get_privilege_level());
@@ -37,13 +44,34 @@ void syscall_handler() {
 void init_idt() {
     for(int i = 0; i < 256; i++) idt[i] = (GateDescriptor) { 0 };
 
-    for (int i = 0; i < 32; ++i) {
+    init_pic();
+    
+    for (int i = 0; i < 48; ++i) {
         idt[i] = make_gate_descriptor(cpu_interrupt_table[i], idtgt_Trap, dpl_Kernel);
     }
+
+    idt[0x21] = make_gate_descriptor((u32) keyboard_wrapper, idtgt_Int, dpl_Kernel);
 
     idt[0x80] = make_gate_descriptor((u32) syscall_wrapper, idtgt_Int, dpl_User);
 
     load_idt(&idt_ptr);
+}
+
+void init_pic() {
+    outb(PIC1_COMMAND, 0x11);
+    outb(PIC2_COMMAND, 0x11);
+
+    outb(PIC1_DATA, 0x20);
+    outb(PIC2_DATA, 0x28);
+
+    outb(PIC1_DATA, 0x04);
+    outb(PIC2_DATA, 0x02);
+
+    outb(PIC1_DATA, 0x01);
+    outb(PIC2_DATA, 0x01);
+
+    outb(PIC1_DATA, 0x0);
+    outb(PIC2_DATA, 0x0);
 }
 
 const char *INTERRUPT_NAMES[32] = {
@@ -76,8 +104,16 @@ const char *INTERRUPT_NAMES[32] = {
     "Reserved",
 };
 
-void interrupt_handler(int interrupt) {
-    KERNEL_ASSERT(interrupt < 32);
+void irq_handler(int interrupt) {
+    terminal_printf("[INT] %i\n", interrupt);
+}
+
+void isr_handler(int interrupt) {
+    KERNEL_ASSERT(interrupt < 48);
+    if (interrupt >= 32) {
+        irq_handler(interrupt);
+        return;
+    }
     terminal_printf("[INT] %s\n", INTERRUPT_NAMES[interrupt]);
-    kernel_panic();
+    //kernel_panic();
 }
