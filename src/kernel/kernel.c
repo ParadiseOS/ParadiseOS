@@ -56,6 +56,7 @@ void kernel_main(void) {
     init_page_structures();
     map_pages(0, 0, 256); // identity map lower memory
     map_pages(0x200000, 0x200000, 256); // identity map our kernel code and data
+    map_pages(0x600000, 0x600000, 256); // identity map our kernel code and data
     enable_paging();
     terminal_printf("Enabled paging\n");
 
@@ -66,7 +67,7 @@ void kernel_main(void) {
 #endif
 
     terminal_printf("CPL: %u\n", get_privilege_level());
-    jump_usermode(usermode_function);
+    jump_usermode(usermode_function, (u32 *) 0x680000);
 
     for (;;) {
         asm ("hlt");

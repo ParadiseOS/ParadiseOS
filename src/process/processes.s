@@ -11,7 +11,7 @@ jump_usermode:
     mov fs, ax
     mov gs, ax
 
-    mov eax, esp
+    mov eax, [esp+0x8]
     push 0x23
     push eax
     pushf

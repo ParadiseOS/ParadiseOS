@@ -46,6 +46,6 @@ typedef struct __attribute__((packed, aligned(4096))) {
     u16 io_base;
 } Tss;
 
-extern __attribute__((noreturn)) void jump_usermode(void *f);
+extern __attribute__((noreturn)) void jump_usermode(void *f, u32 *stack);
 
 #endif

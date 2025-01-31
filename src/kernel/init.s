@@ -1,6 +1,6 @@
 format ELF
 
-section ".data" align 32
+section ".data"
 
 public cpu_interrupts
 cpu_interrupts:

@@ -24,17 +24,17 @@ section ".multiboot" align 4
     dd SIZENOPREF ; height
     dd 0          ; depth (always 0 in text mode)
 
-section ".data" align 4
+section ".data"
+
+public kernel_stack
+kernel_stack:
+    dd stack_top
+
+section ".bss" writable align 16
 
 public multiboot_info
 multiboot_info:
     rd 1
-
-public kernel_stack
-kernel_stack:
-    rd 1
-
-section ".bss" writable align 16
 
 ; Create a 16 KiB, 16 byte aligned stack so our C kernel can function
 stack_bottom:
@@ -49,7 +49,6 @@ public start as "_start"
 start:
     mov esp, stack_top        ; Set up the stack
     mov [multiboot_info], ebx ; Save multiboot info structure for our kernel
-    mov [kernel_stack], esp   ; Save the kernel stack
 
     call kernel_main
 
