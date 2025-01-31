@@ -3,16 +3,6 @@
 
 #include "lib/types.h"
 
-/* ParadiseOS            Initialization
- * This file contains the initialization structures and constants.
- * These constants are specifically used in the IDT and the GDT.
- */
-
-typedef enum {
-    dpl_User   = 3,
-    dpl_Kernel = 0,
-} DescriptorPrivilegeLevel;
-
 /* Used for FLAG values for the segment descriptor stored in the GDT.
  *    - 4k Granularity:          The segment limit is (4096 * limit) bytes
  *    - Byte Granularity:        The segment limit is (limit) bytes
@@ -99,16 +89,6 @@ typedef enum {
     gdtsys_Trap32   = 15, // Trap Gate 32 Bits
 } GdtSystemType;
 
-/* Types of entries in the IDT (Interrupt Descriptor Table)
- *   - TASK: Task Gate
- *   - INT:  Interrupt Gate
- *   - TRAP: Trap Gate
- */
-typedef enum {
-    idtgt_Task =  5, // Task Gate.
-    idtgt_Int  = 14, // Interrupt Gate.
-    idtgt_Trap = 15, // Trap Gate
-} GateType;
 
 /* Consists of a pointer to the generalized table.
  * These pointers only need to store the size of the 
@@ -122,10 +102,8 @@ typedef struct __attribute__((packed)) {
 } TablePointer;
 
 typedef struct __attribute__((aligned(8))) { u64 value; } SegmentDescriptor;
-typedef struct { u64 value; } GateDescriptor;
 
 void init_gdt();
-void init_idt();
 void init_tss();
 
 extern u8 get_privilege_level();

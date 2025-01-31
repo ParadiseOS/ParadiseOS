@@ -1,14 +1,6 @@
 format ELF
 
-section ".data"
-
-public cpu_interrupts
-cpu_interrupts:
-rept 32 interrupt:0 {
-    dd interrupt_wrapper_#interrupt
-}
-
-section ".pages" writeable align 4096
+section ".pages" writeable align 1024 * 4
 
 ; Create a page directory and page table, both must be page-aligned
 public page_directory_start
@@ -19,28 +11,6 @@ page_tables_start:
     rd 1024 * 12 ; Just allocate space for 12 tables for now
 
 section ".text" executable
-
-extrn interrupt_handler
-rept 32 interrupt:0 {
-    public interrupt_wrapper_#interrupt
-    interrupt_wrapper_#interrupt:
-        push interrupt
-        call interrupt_handler
-        add esp, 0x04
-        iret
-}
-
-extrn syscall_handler
-public syscall_wrapper
-syscall_wrapper:
-    call syscall_handler
-    iret
-
-public load_idt
-load_idt:
-    mov eax, [esp+0x4]
-    lidt [eax]
-    ret
 
 public load_gdt
 load_gdt:

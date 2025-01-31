@@ -2,6 +2,7 @@
 #include "terminal/terminal.h"
 #include "boot/multiboot.h"
 #include "init.h"
+#include "interrupts/interrupt.h"
 #include "lib/error.h"
 #include "memory/mem.h"
 #include "process/processes.h"
