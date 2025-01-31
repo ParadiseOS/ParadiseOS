@@ -24,7 +24,7 @@ section ".multiboot" align 4
     dd SIZENOPREF ; height
     dd 0          ; depth (always 0 in text mode)
 
-section ".data" align 16
+section ".data" align 4
 
 public multiboot_info
 multiboot_info:
@@ -34,7 +34,9 @@ public kernel_stack
 kernel_stack:
     rd 1
 
-; Create a 16 KiB, word-aligned stack so our C kernel can function
+section ".bss" writable align 16
+
+; Create a 16 KiB, 16 byte aligned stack so our C kernel can function
 stack_bottom:
     align 16
     rb 1024 * 16
