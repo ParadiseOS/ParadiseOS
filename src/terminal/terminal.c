@@ -1,4 +1,5 @@
 #include "terminal.h"
+#include "lib/util.h"
 #include <stdarg.h>
 
 Terminal terminal;
@@ -9,6 +10,14 @@ u8 vga_color_create(VgaColor fg, VgaColor bg) {
 
 u16 vga_entry_create(u8 c, u8 color) {
     return (u16) color << 8 | (u16) c;
+}
+
+void update_cursor() {
+    usize pos = terminal.row * terminal.width + terminal.col;
+    outb(0x3D4, 0x0F);
+    outb(0x3D5, (u8) (pos & 0xFF));
+    outb(0x3D4, 0x0E);
+    outb(0x3D5, (u8) ((pos >> 8) & 0xFF));
 }
 
 void terminal_init(usize width, usize height, u16 *buffer) {
@@ -34,6 +43,16 @@ void terminal_scroll(void) {
     for (usize c = 0; c < terminal.width; ++c) {
         terminal.buffer[(terminal.height - 1) * terminal.width + c] = vga_entry_create(' ', terminal.color);
     }
+    update_cursor();
+}
+
+void terminal_backspace() {
+    if (terminal.col == 0)
+        return;
+    terminal.col--;
+    usize i = terminal.row * terminal.width + terminal.col;
+    terminal.buffer[i] = vga_entry_create(' ', terminal.color);
+    update_cursor();
 }
 
 void terminal_putchar(u8 c) {
@@ -44,7 +63,18 @@ void terminal_putchar(u8 c) {
             --terminal.row;
             terminal_scroll();
         }
+        update_cursor();
+        return;
+    }
 
+    if (c == '\t') {
+        terminal.col += 4;
+        update_cursor();
+        return;
+    }
+
+    if (c == '\b') {
+        terminal_backspace();
         return;
     }
 
@@ -60,6 +90,7 @@ void terminal_putchar(u8 c) {
     usize i = terminal.row * terminal.width + terminal.col;
     terminal.buffer[i] = vga_entry_create(c, terminal.color);
     ++terminal.col;
+    update_cursor();
 }
 
 void terminal_print_string(const char *string) {
