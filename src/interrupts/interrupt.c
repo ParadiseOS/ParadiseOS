@@ -32,6 +32,9 @@ GateDescriptor make_gate_descriptor(u32 handler, u8 type, u8 privilege_level) {
     return (GateDescriptor) { descriptor };
 }
 
+/**
+ * @brief Function pointers to all 16 external interrupts
+ */
 void* irq_routines[16] = {
     0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0
@@ -42,27 +45,68 @@ void syscall_handler() {
     terminal_printf("CPL: %u\n", get_privilege_level());
 }
 
+/**
+ * @brief Enables Programmable Interrupt Controller
+ */
 void init_pic() {
+    // Spin up chips (ICW1)
     outb(PIC1_COMMAND, 0x11);
     outb(PIC2_COMMAND, 0x11);
 
+    // Sets up interrupt vector table (ICW2)
     outb(PIC1_DATA, 0x20);
     outb(PIC2_DATA, 0x28);
 
+    // Wiring (ICW3)
     outb(PIC1_DATA, 0x04);
     outb(PIC2_DATA, 0x02);
 
+    // Set x86 mode (ICW4)
     outb(PIC1_DATA, 0x01);
     outb(PIC2_DATA, 0x01);
 
-    outb(PIC1_DATA, 0x0);
-    outb(PIC2_DATA, 0x0);
-
-    outb(PIC1_DATA,0xfd);
+    // Mask all interrupts
+    outb(PIC1_DATA,0xff);
     outb(PIC2_DATA,0xff);
-    asm("sti");
+    asm("sti"); // Enable interrupts
 }
 
+/**
+ * @brief Sets mask for PIC
+ * @param irq The external interrupt
+ * @param enable if true enables mask otherwise disables mask
+ */
+void pic_mask(u8 irq, bool enable) {
+    u16 port;
+    u16 value;
+
+    if (irq < 8) {
+        port = PIC1_DATA;
+    } else {
+        port = PIC2_DATA;
+        irq -= 8;
+    }
+
+    if (enable)
+        value = inb(port) | (1 << irq);
+    else
+        value = inb(port) & ~(1 << irq);
+    outb(port, value);
+}
+
+/**
+ * @brief 
+ * @param irq The external interrupt
+ */
+void pic_eoi(u8 irq) {
+    if (irq > 8)
+        outb(PIC2_COMMAND, PIC_EOI);
+    outb(PIC1_COMMAND, PIC_EOI);
+}
+
+/**
+ * @brief Initialize the interrupt descriptor table
+ */
 void init_idt() {
     for(u32 i = 0; i < 256; i++) idt[i] = (GateDescriptor) { 0 };
 
@@ -78,12 +122,6 @@ void init_idt() {
     idt[0x80] = make_gate_descriptor((u32) syscall_wrapper, idtgt_Int, dpl_User);
 
     load_idt(&idt_ptr);
-}
-
-void pic_eoi(u8 irq) {
-    if (irq > 8)
-        outb(PIC2_COMMAND, PIC_EOI);
-    outb(PIC1_COMMAND, PIC_EOI);
 }
 
 const char *INTERRUPT_NAMES[32] = {
@@ -116,14 +154,29 @@ const char *INTERRUPT_NAMES[32] = {
     "Reserved",
 };
 
+/**
+ * @brief Sets irq routine for an irq to a function pointer
+ * @param irq The external interrupt
+ * @param handler Pointer to handler function
+ */
 void irq_install_handler(u32 irq, void (*handler)(InterruptRegisters* reg)) {
     irq_routines[irq] = handler;
+    pic_mask(irq, FALSE);
 }
 
+/**
+ * @brief Resets irq routine for an irq
+ * @param irq The external interrupt
+ */
 void irq_uninstall_handler(u32 irq) {
+    pic_mask(irq, TRUE);
     irq_routines[irq] = 0;
 }
 
+/**
+ * @brief Handles external interrupt with irq routine function
+ * @param regs Interrupt registers
+ */
 void irq_handler(InterruptRegisters* regs) {
     void (*handler)(InterruptRegisters* regs);
 
@@ -136,9 +189,12 @@ void irq_handler(InterruptRegisters* regs) {
     pic_eoi(irq);
 }
 
+/**
+ * @brief Handles software interrupts. Routes to irq if external.
+ * @param regs Interrupt registers
+ */
 void isr_handler(InterruptRegisters* regs) {
     u32 interrupt = regs->int_no;
-    terminal_printf("Interrupt - %i\n", interrupt);
     KERNEL_ASSERT(interrupt < 48);
     if (interrupt >= 32)
         irq_handler(regs);
