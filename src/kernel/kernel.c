@@ -73,7 +73,8 @@ void kernel_main(void) {
 #endif
 
     terminal_printf("CPL: %u\n", get_privilege_level());
-    jump_usermode(usermode_function, (u32 *) 0x680000);
+    //jump_usermode(usermode_function, (u32 *) 0x680000);
+    // General protection fault from cursor move in usermode?
 
     for (;;) {
         asm ("hlt");
