@@ -7,6 +7,7 @@
 #include "memory/mem.h"
 #include "process/processes.h"
 #include "tests/testing.h"
+#include "drivers/keyboard/keyboard.h"
 #include "drivers/serial/io.h"
 
 extern const u32 *multiboot_info;
@@ -60,6 +61,10 @@ void kernel_main(void) {
     map_pages(0x600000, 0x600000, 256); // identity map our kernel code and data
     enable_paging();
     terminal_printf("Enabled paging\n");
+
+    terminal_printf("Initializing Keyboard\n");
+    init_keyboard();
+    terminal_printf("Keyboard Initialized\n");
 
     serial_init();
 

@@ -32,29 +32,14 @@ GateDescriptor make_gate_descriptor(u32 handler, u8 type, u8 privilege_level) {
     return (GateDescriptor) { descriptor };
 }
 
-void keyboard_handler() {
-    key_press();
-}
+void* irq_routines[16] = {
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0
+};
 
 void syscall_handler() {
     terminal_printf("syscalled!\n");
     terminal_printf("CPL: %u\n", get_privilege_level());
-}
-
-void init_idt() {
-    for(int i = 0; i < 256; i++) idt[i] = (GateDescriptor) { 0 };
-
-    init_pic();
-    
-    for (int i = 0; i < 48; ++i) {
-        idt[i] = make_gate_descriptor(cpu_interrupt_table[i], idtgt_Trap, dpl_Kernel);
-    }
-
-    idt[0x21] = make_gate_descriptor((u32) keyboard_wrapper, idtgt_Int, dpl_Kernel);
-
-    idt[0x80] = make_gate_descriptor((u32) syscall_wrapper, idtgt_Int, dpl_User);
-
-    load_idt(&idt_ptr);
 }
 
 void init_pic() {
@@ -72,6 +57,33 @@ void init_pic() {
 
     outb(PIC1_DATA, 0x0);
     outb(PIC2_DATA, 0x0);
+
+    outb(PIC1_DATA,0xfd);
+    outb(PIC2_DATA,0xff);
+    asm("sti");
+}
+
+void init_idt() {
+    for(u32 i = 0; i < 256; i++) idt[i] = (GateDescriptor) { 0 };
+
+    init_pic();
+    
+    for (u32 i = 0; i < 32; ++i) {
+        idt[i] = make_gate_descriptor((u32)cpu_interrupt_table[i], idtgt_Trap, dpl_Kernel);
+    }
+
+    for (u32 i = 32; i < 48; i++){
+        idt[i] = make_gate_descriptor((u32)cpu_interrupt_table[i], idtgt_Int, dpl_Kernel);
+    }
+    idt[0x80] = make_gate_descriptor((u32) syscall_wrapper, idtgt_Int, dpl_User);
+
+    load_idt(&idt_ptr);
+}
+
+void pic_eoi(u8 irq) {
+    if (irq > 8)
+        outb(PIC2_COMMAND, PIC_EOI);
+    outb(PIC1_COMMAND, PIC_EOI);
 }
 
 const char *INTERRUPT_NAMES[32] = {
@@ -104,16 +116,34 @@ const char *INTERRUPT_NAMES[32] = {
     "Reserved",
 };
 
-void irq_handler(int interrupt) {
-    terminal_printf("[INT] %i\n", interrupt);
+void irq_install_handler(u32 irq, void (*handler)(InterruptRegisters* reg)) {
+    irq_routines[irq] = handler;
 }
 
-void isr_handler(int interrupt) {
+void irq_uninstall_handler(u32 irq) {
+    irq_routines[irq] = 0;
+}
+
+void irq_handler(InterruptRegisters* regs) {
+    void (*handler)(InterruptRegisters* regs);
+
+    u8 irq = regs->int_no - 32;
+
+    handler = irq_routines[irq];
+
+    if (handler)
+        handler(regs);
+    pic_eoi(irq);
+}
+
+void isr_handler(InterruptRegisters* regs) {
+    u32 interrupt = regs->int_no;
+    terminal_printf("Interrupt - %i\n", interrupt);
     KERNEL_ASSERT(interrupt < 48);
-    if (interrupt >= 32) {
-        irq_handler(interrupt);
-        return;
+    if (interrupt >= 32)
+        irq_handler(regs);
+    else {
+        terminal_printf("[INT] %s\n", INTERRUPT_NAMES[interrupt]);
+        kernel_panic();
     }
-    terminal_printf("[INT] %s\n", INTERRUPT_NAMES[interrupt]);
-    //kernel_panic();
 }
