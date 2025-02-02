@@ -78,5 +78,5 @@ void kernel_test(MultibootInfo *mb_info) {
     serial_write('l');
     serial_write('o');
 
-    asm ("int $0x80"); // test our interrupt handler
+    //asm ("int $0x80"); // test our interrupt handler
 }
