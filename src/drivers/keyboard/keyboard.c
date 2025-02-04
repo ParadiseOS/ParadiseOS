@@ -64,6 +64,8 @@ UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN
 };
 
 void keyboardHandler(InterruptRegisters* regs) {
+    (void) regs;
+
     // Using Scan Code Set 1 - https://users.utcluj.ro/~baruch/sie/labor/PS2/Scan_Codes_Set_1.htm
     u8 scanCode = inb(SCAN_PORT) & 0x7F; // Key
     u8 press = inb(SCAN_PORT) & 0x80; // Press down or release
