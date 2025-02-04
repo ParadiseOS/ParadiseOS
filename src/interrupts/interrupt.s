@@ -95,7 +95,11 @@ rept 48 int_no:0 {
 extrn syscall_handler
 public syscall_wrapper
 syscall_wrapper:
+    cli
+    pushad
     call syscall_handler
+    popad
+    sti
     iret
 
 public load_idt

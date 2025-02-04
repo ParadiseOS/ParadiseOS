@@ -13,11 +13,11 @@ u16 vga_entry_create(u8 c, u8 color) {
 }
 
 void update_cursor() {
-    usize pos = terminal.row * terminal.width + terminal.col;
-    outb(0x3D4, 0x0F);
-    outb(0x3D5, (u8) (pos & 0xFF));
-    outb(0x3D4, 0x0E);
-    outb(0x3D5, (u8) ((pos >> 8) & 0xFF));
+    // usize pos = terminal.row * terminal.width + terminal.col;
+    // outb(0x3D4, 0x0F);
+    // outb(0x3D5, (u8) (pos & 0xFF));
+    // outb(0x3D4, 0x0E);
+    // outb(0x3D5, (u8) ((pos >> 8) & 0xFF));
 }
 
 void terminal_init(usize width, usize height, u16 *buffer) {
