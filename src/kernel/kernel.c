@@ -11,7 +11,10 @@
 #include "drivers/keyboard/keyboard.h"
 #include "drivers/serial/io.h"
 
-extern const u32 *multiboot_info;
+const void *kernel_start_addr = &_kernel_start;
+const void *kernel_end_addr = &_kernel_end;
+
+u8 usermode_stack[1024];
 
 void usermode_function() {
     terminal_printf("Usermode!\n");
@@ -23,45 +26,37 @@ void usermode_function() {
 }
 
 void kernel_main(void) {
-    MultibootInfo *mb_info = (MultibootInfo *) multiboot_info;
-    u32 mb_flags = mb_info->flags;
+    u32 kernel_size = (u32) kernel_end_addr - (u32) kernel_start_addr;
 
-    if (!(mb_info->flags & MB_FLAG_FRAMEBUFFER)) {
+    if (!(multiboot_info->flags & MB_FLAG_FRAMEBUFFER)) {
         // No terminal info is available. Something went wrong and there's no
         // way to report it.
         kernel_panic();
     }
 
     terminal_init(
-        mb_info->framebuffer_width,
-        mb_info->framebuffer_height,
-        (u16 *) mb_info->framebuffer_addr_lo
+        multiboot_info->framebuffer_width,
+        multiboot_info->framebuffer_height,
+        (u16 *) multiboot_info->framebuffer_addr_lo
     );
 
-    KERNEL_ASSERT(mb_info->framebuffer_addr_hi == 0);
+    KERNEL_ASSERT(multiboot_info->framebuffer_addr_hi == 0);
 
-    terminal_printf("Hello, Paradise!\n");
-
-    terminal_printf("Multiboot flags: %b\n", mb_flags);
-
-    terminal_printf("Initializing GDT\n");
+    terminal_printf("Initializing GDT...\n");
     init_gdt();
-    terminal_printf("GDT Initialized\n");
-
-    terminal_printf("Initializing IDT\n");
+    terminal_printf("Initializing IDT...\n");
     init_idt();
-    terminal_printf("IDT Initialized\n");
-
-    terminal_printf("Initializing TSS\n");
+    terminal_printf("Initializing TSS...\n");
     init_tss();
-    terminal_printf("TSS Initialized\n");
+    terminal_printf("Initializing frames...\n");
+    init_frames();
 
-    init_page_structures();
-    map_pages(0, 0, 256); // identity map lower memory
-    map_pages(0x200000, 0x200000, 256); // identity map our kernel code and data
-    map_pages(0x600000, 0x600000, 256); // identity map our kernel code and data
+    terminal_printf("Initializing paging...\n");
+    init_paging();
+    map_pages_physical(0, 0, 256); // identity map lower memory
+    map_pages_physical((u32) kernel_start_addr, (u32) kernel_start_addr, // identity map our kernel code and data
+                       (kernel_size + 4095) / 4096);
     enable_paging();
-    terminal_printf("Enabled paging\n");
 
     terminal_printf("Initializing Timer\n");
     init_timer();
@@ -69,16 +64,17 @@ void kernel_main(void) {
 
     terminal_printf("Initializing Keyboard\n");
     init_keyboard();
-    terminal_printf("Keyboard Initialized\n");
 
+    terminal_printf("Initializing serial io...\n");
     serial_init();
 
 #ifdef TESTS_ENABLED // Test Flag should be passed to build script
-    kernel_test(mb_info);
+    kernel_test();
 #endif
 
     terminal_printf("CPL: %u\n", get_privilege_level());
-    jump_usermode(usermode_function, (u32 *) 0x680000);
+    terminal_printf("%x - %x (%u)\n", kernel_start_addr, kernel_end_addr, kernel_size);
+    jump_usermode(usermode_function, usermode_stack);
 
     for (;;) {
         asm ("hlt");

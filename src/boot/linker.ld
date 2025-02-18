@@ -2,7 +2,8 @@ ENTRY(_start)
 
 SECTIONS {
     /* Start physical address */
-    . = 2M;
+    . = 1M;
+    _kernel_start = .;
 
     .text BLOCK(4K) : ALIGN(4K) {
         *(.multiboot) /* Multiboot header must come first */
@@ -22,7 +23,9 @@ SECTIONS {
         *(.bss)
     }
 
-    .pages BLOCK(4K) : ALIGN(4K) {
-        *(.pages)
+    .pagedir BLOCK(4K) : ALIGN(4K) {
+        *(.pagedir)
     }
+
+    _kernel_end = .;
 }

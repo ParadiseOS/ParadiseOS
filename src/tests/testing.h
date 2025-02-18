@@ -3,6 +3,6 @@
 
 #include "boot/multiboot.h"
 
-void kernel_test(MultibootInfo *mb_info);
+void kernel_test();
 
 #endif // TESTING_H_

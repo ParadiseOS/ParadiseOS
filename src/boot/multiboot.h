@@ -50,4 +50,6 @@ typedef struct __attribute__((packed)) {
     u32 framebuffer_height;
 } MultibootInfo;
 
+extern const MultibootInfo *multiboot_info;
+
 #endif // MULTIBOOT_H_
