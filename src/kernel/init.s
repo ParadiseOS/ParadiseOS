@@ -1,14 +1,11 @@
 format ELF
 
-section ".pages" writeable align 1024 * 4
+section ".pagedir" writeable align 4096
 
-; Create a page directory and page table, both must be page-aligned
+; Create a page-aligned page directory
 public page_directory_start
 page_directory_start:
     rd 1024
-public page_tables_start
-page_tables_start:
-    rd 1024 * 12 ; Just allocate space for 12 tables for now
 
 section ".text" executable
 
