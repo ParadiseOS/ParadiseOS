@@ -1,5 +1,5 @@
 run:
-    qemu-system-i386 -cdrom build/paradise-os.iso
+    qemu-system-i386 -cdrom build/paradise-os.iso &
 
 run-debug:
     qemu-system-i386 -s -S -cdrom build/paradise-os.iso &

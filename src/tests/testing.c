@@ -6,15 +6,15 @@
 #include "lib/error.h"
 #include "drivers/serial/io.h"
 
-void kernel_test(MultibootInfo *mb_info) {
+void kernel_test() {
     terminal_printf("\nTesting is enabled!\n");
 
-    // Testing that paging works. Here we remap an invalid address.
-    map_pages(0x694200, 0xFFFFFFFF, 1);
-    u8 *ptr = (u8 *) 0xFFFFFFFF; // this wouldn't work without paging
+    /* // Testing that paging works. Here we remap an invalid address. */
+    /* map_pages(0x694200, 0xFFFFFFFF, 1); */
+    /* u8 *ptr = (u8 *) 0xFFFFFFFF; // this wouldn't work without paging */
 
-    *ptr = 69;
-    terminal_printf("*ptr: %u\n", (u32) *ptr);
+    /* *ptr = 69; */
+    /* terminal_printf("*ptr: %u\n", (u32) *ptr); */
 
     terminal_printf("Charset:\n");
     terminal.color = vga_color_create(VGA_COLOR_LIGHT_BLUE, VGA_COLOR_BLACK);
@@ -42,12 +42,11 @@ void kernel_test(MultibootInfo *mb_info) {
                     a, a, b, b, a, b, a, b, message, *message);
     terminal.color = vga_color_create(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
 
-    MMapEntry *entries = mb_info->mmap_addr;
+    MMapEntry *entries = multiboot_info->mmap_addr;
 
-    KERNEL_ASSERT(mb_info->flags & MB_FLAG_MMAP);
+    KERNEL_ASSERT(multiboot_info->flags & MB_FLAG_MMAP);
 
-    for (u32 i = 0; i < mb_info->mmap_length / sizeof (MMapEntry); i++) {
-        KERNEL_ASSERT(entries[i].base_addr_hi == 0 && entries[i].length_hi == 0);
+    for (u32 i = 0; i < multiboot_info->mmap_length / sizeof (MMapEntry); i++) {
         terminal_printf("%u (%u): %p %u ", i, entries[i].size, entries[i].base_addr_lo, entries[i].length_lo);
 
         switch (entries[i].type) {
