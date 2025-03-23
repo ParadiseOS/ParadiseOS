@@ -52,11 +52,10 @@ void kernel_main(void) {
     terminal_printf("Initializing memory...\n");
     mem_init();
 
-    terminal_printf("Initializing Timer\n");
+    terminal_printf("Initializing timer\n");
     init_timer();
-    terminal_printf("Timer Initialized\n");
 
-    terminal_printf("Initializing Keyboard\n");
+    terminal_printf("Initializing keyboard\n");
     init_keyboard();
 
     terminal_printf("Initializing serial io...\n");
