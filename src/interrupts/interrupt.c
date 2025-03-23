@@ -68,7 +68,7 @@ void init_pic() {
     // Mask all interrupts
     outb(PIC1_DATA,0xff);
     outb(PIC2_DATA,0xff);
-    asm("sti"); // Enable interrupts
+    asm ("sti"); // Enable interrupts
 }
 
 /**

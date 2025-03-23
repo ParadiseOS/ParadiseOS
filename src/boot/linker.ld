@@ -3,29 +3,37 @@ ENTRY(_start)
 SECTIONS {
     /* Start physical address */
     . = 1M;
-    _kernel_start = .;
+    _kernel_start_paddr = .;
+    _kernel_start_vaddr = . + 0xC0000000;
 
-    .text BLOCK(4K) : ALIGN(4K) {
+    .multiboot : {
         *(.multiboot) /* Multiboot header must come first */
+        *(.boottext)
+    }
+
+    . += 0xC0000000;
+
+    .text ALIGN(4K) : AT(ADDR (.text) - 0xC0000000) {
         *(.text)
     }
 
-    .rodata BLOCK(4K) : ALIGN(4K) {
+    .rodata ALIGN(4K) : AT(ADDR (.rodata) - 0xC0000000) {
         *(.rodata)
     }
 
-    .data BLOCK(4K) : ALIGN(4K) {
+    .data ALIGN(4K) : AT(ADDR (.data) - 0xC0000000) {
         *(.data)
     }
 
-    .bss BLOCK(4K) : ALIGN(4K) {
+    .bss ALIGN(4K) : AT(ADDR (.bss) - 0xC0000000) {
         *(COMMON)
         *(.bss)
     }
 
-    .pagedir BLOCK(4K) : ALIGN(4K) {
-        *(.pagedir)
+    .paging ALIGN(4K) : AT(ADDR (.paging) - 0xC0000000) {
+        *(.paging)
     }
 
-    _kernel_end = .;
+    _kernel_end_paddr = . - 0xC0000000;
+    _kernel_end_vaddr = .;
 }
