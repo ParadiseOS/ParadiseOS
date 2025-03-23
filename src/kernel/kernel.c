@@ -11,10 +11,10 @@
 #include "drivers/keyboard/keyboard.h"
 #include "drivers/serial/io.h"
 
-const void *kernel_start_addr = &_kernel_start;
-const void *kernel_end_addr = &_kernel_end;
-
-u8 usermode_stack[1024];
+const u32 kernel_start_paddr = (u32) &_kernel_start_paddr;
+const void *kernel_start_vaddr = &_kernel_start_vaddr;
+const u32 kernel_end_paddr = (u32) &_kernel_end_paddr;
+const void *kernel_end_vaddr = &_kernel_end_vaddr;
 
 void usermode_function() {
     terminal_printf("Usermode!\n");
@@ -26,8 +26,6 @@ void usermode_function() {
 }
 
 void kernel_main(void) {
-    u32 kernel_size = (u32) kernel_end_addr - (u32) kernel_start_addr;
-
     if (!(multiboot_info->flags & MB_FLAG_FRAMEBUFFER)) {
         // No terminal info is available. Something went wrong and there's no
         // way to report it.
@@ -44,19 +42,15 @@ void kernel_main(void) {
 
     terminal_printf("Initializing GDT...\n");
     init_gdt();
+
     terminal_printf("Initializing IDT...\n");
     init_idt();
+
     terminal_printf("Initializing TSS...\n");
     init_tss();
-    terminal_printf("Initializing frames...\n");
-    init_frames();
 
-    terminal_printf("Initializing paging...\n");
-    init_paging();
-    map_pages_physical(0, 0, 256); // identity map lower memory
-    map_pages_physical((u32) kernel_start_addr, (u32) kernel_start_addr, // identity map our kernel code and data
-                       (kernel_size + 4095) / 4096);
-    enable_paging();
+    terminal_printf("Initializing memory...\n");
+    mem_init();
 
     terminal_printf("Initializing Timer\n");
     init_timer();
@@ -72,8 +66,8 @@ void kernel_main(void) {
     kernel_test();
 #endif
 
+    u8 *usermode_stack = kernel_alloc(1);
     terminal_printf("CPL: %u\n", get_privilege_level());
-    terminal_printf("%x - %x (%u)\n", kernel_start_addr, kernel_end_addr, kernel_size);
     jump_usermode(usermode_function, usermode_stack);
 
     for (;;) {
