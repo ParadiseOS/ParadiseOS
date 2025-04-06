@@ -68,7 +68,7 @@ void kernel_main(void) {
 
     u32 usermode_stack_pages = 1;
     u8 *usermode_stack_bottom = kernel_alloc(usermode_stack_pages);
-    u8 *usermode_stack_top = usermode_stack_bottom + usermode_stack_pages * 4096;
+    u8 *usermode_stack_top = usermode_stack_bottom + usermode_stack_pages * PAGE_SIZE;
 
     terminal_printf("CPL: %u\n", get_privilege_level());
     jump_usermode(usermode_function, usermode_stack_top);

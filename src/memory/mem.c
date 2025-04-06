@@ -78,6 +78,7 @@ void init_page_table(u32 *table) {
     }
 }
 
+// Reclaims a frame of physical memory.
 void free_frame(u32 paddr) {
     *free_list_head_pte = create_entry(paddr, PDE_USER_MODE | PDE_WRITABLE);
     invalidate_page(free_list_head);
@@ -85,7 +86,8 @@ void free_frame(u32 paddr) {
     free_frame_paddr = paddr;
 }
 
-// Returns physical addresses that need to be mapped
+// Allocates a new frame of physical memory. Returns physical addresses that
+// need to be mapped.
 u32 alloc_frame() {
     KERNEL_ASSERT(free_frame_paddr); // are we out of memory?
     u32 frame = free_frame_paddr;
@@ -111,7 +113,7 @@ void map_page(void *vaddr, u32 paddr) {
 }
 
 // Unmaps a page from virtual memory and returns the frame address. The frame is
-// NOT freed
+// NOT freed.
 u32 unmap_page(void *vaddr) {
     u32 pdi = get_pd_index(vaddr);
     u32 pti = get_pt_index(vaddr);
@@ -125,11 +127,12 @@ u32 unmap_page(void *vaddr) {
     return paddr;
 }
 
+// Maps a series of pages to virtual memory.
 void map_pages(void *vaddr, u32 paddr, u32 count) {
     while (count--) {
         map_page(vaddr, paddr);
-        paddr += 4096;
-        vaddr += 4096;
+        paddr += PAGE_SIZE;
+        vaddr += PAGE_SIZE;
     }
 }
 
@@ -137,7 +140,7 @@ void map_pages(void *vaddr, u32 paddr, u32 count) {
 void unmap_pages(void *vaddr, u32 count) {
     while (count--) {
         unmap_page(vaddr);
-        vaddr += 4096;
+        vaddr += PAGE_SIZE;
     }
 }
 
@@ -146,7 +149,7 @@ void unmap_pages(void *vaddr, u32 count) {
 void alloc_pages(void *vaddr, u32 count) {
     while (count--) {
         map_page(vaddr, alloc_frame());
-        vaddr += 4096;
+        vaddr += PAGE_SIZE;
     }
 }
 
@@ -155,15 +158,17 @@ void alloc_pages(void *vaddr, u32 count) {
 void free_pages(void *vaddr, u32 count) {
     while (count--) {
         free_frame(unmap_page(vaddr));
-        vaddr += 4096;
+        vaddr += PAGE_SIZE;
     }
 }
 
 u32 align_next_page(u32 addr) {
-    return (addr + 4095) / 4096 * 4096;
+    return (addr + PAGE_SIZE - 1) / PAGE_SIZE * PAGE_SIZE;
 }
 
-void init_free_page() {
+// Initializes the page which represents the head of our list of free frames and
+// allows us to manipulate it. This page will be placed right after the kernel.
+void init_free_list_page() {
     void *addr = (void *) align_next_page((u32) kernel_end_vaddr);
     u32 pdi = get_pd_index(addr);
     u32 pti = get_pt_index(addr);
@@ -174,6 +179,8 @@ void init_free_page() {
     free_list_head = addr;
 }
 
+// Returns the physical address that a given virtual address maps to. The
+// virtual address must be already mapped.
 u32 query_paddr(void *vaddr) {
     u32 pdi = get_pd_index(vaddr);
     u32 pti = get_pt_index(vaddr);
@@ -193,7 +200,7 @@ void reinit_paging() {
     // be mapped using only one page table. This assumption should be enforced
     // in the boot code.
 
-    u32 kernel_page_count = (kernel_end_paddr - kernel_start_paddr + 4095) / 4096;
+    u32 kernel_page_count = (kernel_end_paddr - kernel_start_paddr + PAGE_SIZE - 1) / PAGE_SIZE;
     u32 kernel_offset = (u32) kernel_start_vaddr - kernel_start_paddr;
 
     // Two addresses which are guaranteed to allocate two new page tables and
@@ -230,7 +237,7 @@ void reinit_paging() {
 void init_frame_region(u32 start_addr, u32 end_addr) {
     start_addr = align_next_page(start_addr);
 
-    for (u32 f = start_addr; f < end_addr; f += 4096) {
+    for (u32 f = start_addr; f < end_addr; f += PAGE_SIZE) {
         free_frame(f);
     }
 }
@@ -251,22 +258,27 @@ void init_frames() {
     }
 }
 
+// Initializes the kernel heap, giving it all pages after the free list page and
+// before the page tables.
 void init_heap() {
-    void *heap_addr = (void *) free_list_head + 4096;
-    u32 page_count = ((void *) page_table_entries - heap_addr) / 4096;
+    void *heap_addr = (void *) free_list_head + PAGE_SIZE;
+    u32 page_count = ((void *) page_table_entries - heap_addr) / PAGE_SIZE;
 
     heap_init(&heap, heap_addr, page_count);
 }
 
+// Performs all operations required to initialize our kernel memory management.
 void mem_init() {
     asm ("cli"); // Probably don't want interrupts while doing this
-    init_free_page();
+    init_free_list_page();
     init_frames();
     reinit_paging();
     init_heap();
     asm ("sti");
 }
 
+// Allocates a given number of pages on the heap. Empty allocations are not
+// allowed.
 void *kernel_alloc(u32 pages) {
     KERNEL_ASSERT(pages);
     void *vaddr = heap_alloc(&heap, pages);
@@ -274,6 +286,9 @@ void *kernel_alloc(u32 pages) {
     return vaddr;
 }
 
+// Reallocates an existing allocation to a new size. This may require moving the
+// pointer and copying the data so the new pointer is returned. If a different
+// pointer is returned, the old pointer is invalidated.
 void *kernel_realloc(void *ptr, u32 pages) {
     KERNEL_ASSERT(pages);
 
@@ -282,28 +297,33 @@ void *kernel_realloc(void *ptr, u32 pages) {
 
     if (new_ptr != ptr) {
         alloc_pages(new_ptr, pages);
-        pmemcpy(new_ptr, ptr, old_size * 4096);
+        pmemcpy(new_ptr, ptr, old_size * PAGE_SIZE);
         free_pages(ptr, old_size);
     }
     else {
         if (old_size > pages) {
-            free_pages(ptr + pages * 4096, old_size - pages);
+            free_pages(ptr + pages * PAGE_SIZE, old_size - pages);
         }
         else {
-            alloc_pages(ptr + old_size * 4096, pages - old_size);
+            alloc_pages(ptr + old_size * PAGE_SIZE, pages - old_size);
         }
     }
 
     return new_ptr;
 }
 
+// Frees an existing allocation.
 void kernel_free(void *ptr) {
     u32 freed_count = heap_free(&heap, ptr);
     free_pages(ptr, freed_count);
 }
 
+// Ensures that heap pages are marked as used if and only if their corresponding
+// page table entry is present. This function checks every page on the heap and
+// thus should only be used for debugging purposes. We also print a
+// representation of the usage of the first `pages` pages of the heap.
 void debug_heap(u32 pages) {
-    for (void *addr = heap.heap_start; addr < (void *) page_table_entries; addr += 4096) {
+    for (void *addr = heap.heap_start; addr < (void *) page_table_entries; addr += PAGE_SIZE) {
         KERNEL_ASSERT(heap_is_used(&heap, addr) == entry_present(get_entry(addr)));
     }
 
