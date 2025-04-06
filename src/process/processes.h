@@ -2,10 +2,11 @@
 #define PROCESS_H_
 
 #include "lib/types.h"
+#include "memory/mem.h"
 
 #define TSS_SIZE 104
 
-typedef struct __attribute__((packed, aligned(4096))) {
+typedef struct __attribute__((packed, aligned(PAGE_SIZE))) {
     u16 prev_task_link;
     u16 reserved1;
     u32 esp0;

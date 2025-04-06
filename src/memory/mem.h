@@ -4,6 +4,8 @@
 #include "lib/types.h"
 #include "boot/multiboot.h"
 
+#define PAGE_SIZE 4096
+
 void mem_init();
 void map_pages(void *vaddr, u32 paddr, u32 count);
 void alloc_pages(void *vaddr, u32 count);
