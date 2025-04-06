@@ -70,12 +70,4 @@ void kernel_test() {
             break;
         }
     }
-
-    serial_write('H');
-    serial_write('e');
-    serial_write('l');
-    serial_write('l');
-    serial_write('o');
-
-    //asm ("int $0x80"); // test our interrupt handler
 }

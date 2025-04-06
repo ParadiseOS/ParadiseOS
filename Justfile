@@ -1,5 +1,5 @@
-run:
-    qemu-system-i386 -cdrom build/paradise-os.iso &
+run *args:
+    qemu-system-i386 {{args}} -cdrom build/paradise-os.iso &
 
 run-debug:
     qemu-system-i386 -s -S -cdrom build/paradise-os.iso &
@@ -7,11 +7,8 @@ run-debug:
 run-gdb:
     gdb -x gdb-init.txt
 
-build:
-    ./build.sh
-
-build-test:
-    ./build.sh -t
+build *args:
+    ./build.sh {{args}}
 
 build-cc:
     docker build -t paradise-os .

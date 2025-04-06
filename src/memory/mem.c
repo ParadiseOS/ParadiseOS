@@ -2,7 +2,9 @@
 #include "lib/error.h"
 #include "boot/multiboot.h"
 #include "kernel/kernel.h"
+#include "lib/libp.h"
 #include "terminal/terminal.h"
+#include "memory/heap.h"
 
 #define LOWER_MEM_PAGE_COUNT 256
 #define MAX_KERNEL_PAGE_COUNT 0x300
@@ -30,9 +32,7 @@ u32 *free_list_head = NULL;
 u32 *free_list_head_pte = NULL;
 u32 free_frame_paddr = 0;
 
-// For now we will just have a heap that acts like a stack. Allocate addresses
-// linearly and don't provide a way to free particular allocations.
-u32 *heap_vaddr = NULL;
+Heap heap;
 
 u32 get_pd_index(void *vaddr) {
     return (u32) vaddr >> 22;
@@ -52,6 +52,12 @@ u32 *get_page_table(u32 pd_index) {
 
 bool entry_present(u32 entry) {
     return (entry & 1) != 0;
+}
+
+u32 get_entry(void *vaddr) {
+    u32 pdi = get_pd_index(vaddr);
+    if (!entry_present(PDE(pdi))) return 0;
+    return PTE(pdi, get_pt_index(vaddr));
 }
 
 u32 create_entry(u32 paddr, u16 flags) {
@@ -89,6 +95,7 @@ u32 alloc_frame() {
     return frame;
 }
 
+// Maps a page in virtual memory. Does not back it with a physical address.
 void map_page(void *vaddr, u32 paddr) {
     u32 pdi = get_pd_index(vaddr);
     u32 pti = get_pt_index(vaddr);
@@ -103,6 +110,21 @@ void map_page(void *vaddr, u32 paddr) {
     PTE(pdi, pti) = create_entry(paddr, PTE_WRITABLE | PTE_USER_MODE);
 }
 
+// Unmaps a page from virtual memory and returns the frame address. The frame is
+// NOT freed
+u32 unmap_page(void *vaddr) {
+    u32 pdi = get_pd_index(vaddr);
+    u32 pti = get_pt_index(vaddr);
+
+    KERNEL_ASSERT(entry_present(PDE(pdi)));
+    KERNEL_ASSERT(entry_present(PTE(pdi, pti)));
+
+    u32 paddr = get_paddr(PTE(pdi, pti));
+    PTE(pdi, pti) = 0;
+    invalidate_page(vaddr);
+    return paddr;
+}
+
 void map_pages(void *vaddr, u32 paddr, u32 count) {
     while (count--) {
         map_page(vaddr, paddr);
@@ -111,23 +133,38 @@ void map_pages(void *vaddr, u32 paddr, u32 count) {
     }
 }
 
+// Unmaps a series of pages from virtual memory. Does NOT free the frames.
+void unmap_pages(void *vaddr, u32 count) {
+    while (count--) {
+        unmap_page(vaddr);
+        vaddr += 4096;
+    }
+}
+
+// Allocates pages at a given virtual address. Also backs the memory with
+// physical frames.
+void alloc_pages(void *vaddr, u32 count) {
+    while (count--) {
+        map_page(vaddr, alloc_frame());
+        vaddr += 4096;
+    }
+}
+
+// Frees pages starting at a given virtual address. Also frees the underlying
+// frames.
+void free_pages(void *vaddr, u32 count) {
+    while (count--) {
+        free_frame(unmap_page(vaddr));
+        vaddr += 4096;
+    }
+}
+
 u32 align_next_page(u32 addr) {
     return (addr + 4095) / 4096 * 4096;
 }
 
-void init_heap() {
-    heap_vaddr = (void *) align_next_page((u32) kernel_end_vaddr);
-}
-
-void *heap_next(u32 pages) {
-    KERNEL_ASSERT(heap_vaddr < page_table_entries); // heap overflow?
-    void *vaddr = heap_vaddr;
-    heap_vaddr += pages * 4096;
-    return vaddr;
-}
-
 void init_free_page() {
-    void *addr = heap_next(1);
+    void *addr = (void *) align_next_page((u32) kernel_end_vaddr);
     u32 pdi = get_pd_index(addr);
     u32 pti = get_pt_index(addr);
 
@@ -214,22 +251,61 @@ void init_frames() {
     }
 }
 
+void init_heap() {
+    void *heap_addr = (void *) free_list_head + 4096;
+    u32 page_count = ((void *) page_table_entries - heap_addr) / 4096;
+
+    heap_init(&heap, heap_addr, page_count);
+}
+
 void mem_init() {
     asm ("cli"); // Probably don't want interrupts while doing this
-    init_heap();
     init_free_page();
     init_frames();
     reinit_paging();
+    init_heap();
     asm ("sti");
 }
 
 void *kernel_alloc(u32 pages) {
-    void *vaddr = heap_next(pages);
+    KERNEL_ASSERT(pages);
+    void *vaddr = heap_alloc(&heap, pages);
+    alloc_pages(vaddr, pages);
+    return vaddr;
+}
 
-    while (pages--) {
-        map_page(vaddr, alloc_frame());
-        vaddr += 4096;
+void *kernel_realloc(void *ptr, u32 pages) {
+    KERNEL_ASSERT(pages);
+
+    void *new_ptr;
+    u32 old_size = heap_realloc(&heap, ptr, &new_ptr, pages);
+
+    if (new_ptr != ptr) {
+        alloc_pages(new_ptr, pages);
+        pmemcpy(new_ptr, ptr, old_size * 4096);
+        free_pages(ptr, old_size);
+    }
+    else {
+        if (old_size > pages) {
+            free_pages(ptr + pages * 4096, old_size - pages);
+        }
+        else {
+            alloc_pages(ptr + old_size * 4096, pages - old_size);
+        }
     }
 
-    return vaddr;
+    return new_ptr;
+}
+
+void kernel_free(void *ptr) {
+    u32 freed_count = heap_free(&heap, ptr);
+    free_pages(ptr, freed_count);
+}
+
+void debug_heap(u32 pages) {
+    for (void *addr = heap.heap_start; addr < (void *) page_table_entries; addr += 4096) {
+        KERNEL_ASSERT(heap_is_used(&heap, addr) == entry_present(get_entry(addr)));
+    }
+
+    heap_debug(&heap, pages);
 }

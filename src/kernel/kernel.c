@@ -20,6 +20,7 @@ void usermode_function() {
     terminal_printf("Usermode!\n");
     terminal_printf("CPL: %u\n", get_privilege_level());
     asm ("int $0x80");
+    terminal_printf("CPL: %u\n", get_privilege_level());
     for (;;) {
         asm ("nop");
     }
@@ -65,9 +66,12 @@ void kernel_main(void) {
     kernel_test();
 #endif
 
-    u8 *usermode_stack = kernel_alloc(1);
+    u32 usermode_stack_pages = 1;
+    u8 *usermode_stack_bottom = kernel_alloc(usermode_stack_pages);
+    u8 *usermode_stack_top = usermode_stack_bottom + usermode_stack_pages * 4096;
+
     terminal_printf("CPL: %u\n", get_privilege_level());
-    jump_usermode(usermode_function, usermode_stack);
+    jump_usermode(usermode_function, usermode_stack_top);
 
     for (;;) {
         asm ("hlt");
