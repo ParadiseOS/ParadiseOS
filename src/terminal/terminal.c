@@ -179,6 +179,7 @@ void terminal_print_int(u32 n, bool is_signed) {
     }
 }
 
+// TODO: implement printing of 64 bit integers
 void terminal_printf(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
