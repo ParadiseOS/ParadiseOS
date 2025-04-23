@@ -47,6 +47,27 @@ typedef struct __attribute__((packed, aligned(PAGE_SIZE))) {
     u16 io_base;
 } Tss;
 
+typedef struct {
+    u16 pid;
+    u32 page_dir_paddr;
+} Process;
+
+typedef struct {
+    u32 eip;
+    u32 EFLAGS;
+    u32 eax;
+    u32 ecx;
+    u32 edx;
+    u32 ebx;
+    u32 esp;
+    u32 ebp;
+    u32 esi;
+    u32 edi;
+} ProcessControlBlock;
+
+__attribute__((noreturn))
+void exec(const char *name);
+
 extern __attribute__((noreturn)) void jump_usermode(void (*f)(), void *stack);
 
 #endif

@@ -1,4 +1,5 @@
 #include "kernel.h"
+#include "sun/sun.h"
 #include "terminal/terminal.h"
 #include "boot/multiboot.h"
 #include "init.h"
@@ -62,16 +63,20 @@ void kernel_main(void) {
     terminal_printf("Initializing serial io...\n");
     serial_init();
 
+    sun_init();
+
 #ifdef TESTS_ENABLED // Test Flag should be passed to build script
     kernel_test();
 #endif
 
-    u32 usermode_stack_pages = 1;
-    u8 *usermode_stack_bottom = kernel_alloc(usermode_stack_pages);
-    u8 *usermode_stack_top = usermode_stack_bottom + usermode_stack_pages * PAGE_SIZE;
+    TableEntry *test = sun_exe_lookup("test.out");
+    terminal_printf("entry_point: %x\n", test->entry_point);
+    terminal_printf("text_size: %x\n", test->text_size);
+    terminal_printf("data_size: %x\n", test->data_size);
+    terminal_printf("rodata_size: %x\n", test->rodata_size);
+    terminal_printf("bss_size: %x\n", test->bss_size);
 
-    terminal_printf("CPL: %u\n", get_privilege_level());
-    jump_usermode(usermode_function, usermode_stack_top);
+    exec("test.out");
 
     for (;;) {
         asm ("hlt");

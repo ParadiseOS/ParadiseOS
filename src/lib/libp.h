@@ -8,6 +8,8 @@
 
 void pmemset(void *memory, u8 byte, u32 count);
 void pmemcpy(void *dst, const void *src, u32 count);
+bool pmemeql(const void *a, const void *b, u32 count);
+bool pstreql(const void *a, const void *b);
 
 // see https://prng.di.unimi.it/xoroshiro128plus.c
 typedef struct {

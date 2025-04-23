@@ -18,6 +18,32 @@ void pmemcpy(void *dst, const void *src, u32 count) {
     while (count--) *dst_b++ = *src_b++;
 }
 
+bool pmemeql(const void *a, const void *b, u32 count) {
+    const u8 *a_bytes = a;
+    const u8 *b_bytes = b;
+
+    while (count--)
+        if (*a_bytes++ != *b_bytes++) return FALSE;
+
+    return TRUE;
+}
+
+bool pstreql(const void *a, const void *b) {
+    const u8 *a_bytes = a;
+    const u8 *b_bytes = b;
+    u8 a_byte;
+    u8 b_byte;
+
+    do {
+        a_byte = *a_bytes++;
+        b_byte = *b_bytes++;
+        if (a_byte != b_byte) return FALSE;
+    } while (a_byte);
+
+    return TRUE;
+
+}
+
 void prng_init(Prng *rng, u64 seed) {
     // seed using splitmix64
     // see: https://rosettacode.org/wiki/Pseudo-random_numbers/Splitmix64
