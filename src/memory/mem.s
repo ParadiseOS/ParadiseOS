@@ -15,3 +15,9 @@ flush_tlb:
     mov eax, cr3
     mov cr3, eax
     ret
+
+public load_page_dir
+load_page_dir:
+    mov eax, [esp+0x04]
+    mov cr3, eax
+    ret

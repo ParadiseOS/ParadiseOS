@@ -63,10 +63,12 @@ typedef struct {
     u32 ebp;
     u32 esi;
     u32 edi;
+
+    void *prog_brk;
 } ProcessControlBlock;
 
 __attribute__((noreturn))
-void exec(const char *name);
+void exec_sun(const char *name);
 
 extern __attribute__((noreturn)) void jump_usermode(void (*f)(), void *stack);
 
