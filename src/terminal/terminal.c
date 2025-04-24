@@ -1,4 +1,5 @@
 #include "terminal.h"
+#include "drivers/serial/io.h"
 #include "lib/util.h"
 #include <stdarg.h>
 
@@ -13,11 +14,11 @@ u16 vga_entry_create(u8 c, u8 color) {
 }
 
 void update_cursor() {
-    // usize pos = terminal.row * terminal.width + terminal.col;
-    // outb(0x3D4, 0x0F);
-    // outb(0x3D5, (u8) (pos & 0xFF));
-    // outb(0x3D4, 0x0E);
-    // outb(0x3D5, (u8) ((pos >> 8) & 0xFF));
+    usize pos = terminal.row * terminal.width + terminal.col;
+    outb(0x3D4, 0x0F);
+    outb(0x3D5, (u8) (pos & 0xFF));
+    outb(0x3D4, 0x0E);
+    outb(0x3D5, (u8) ((pos >> 8) & 0xFF));
 }
 
 void terminal_init(usize width, usize height, u16 *buffer) {
@@ -43,6 +44,7 @@ void terminal_scroll(void) {
     for (usize c = 0; c < terminal.width; ++c) {
         terminal.buffer[(terminal.height - 1) * terminal.width + c] = vga_entry_create(' ', terminal.color);
     }
+
     update_cursor();
 }
 
@@ -56,6 +58,8 @@ void terminal_backspace() {
 }
 
 void terminal_putchar(u8 c) {
+    serial_write(c);
+
     if (c == '\n') {
         terminal.col = 0;
 

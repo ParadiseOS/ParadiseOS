@@ -35,14 +35,15 @@ typedef enum {
 typedef struct { u64 value; } GateDescriptor;
 
 typedef struct {
-    uint32_t cr2;
-    uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
-    uint32_t int_no, err_code;
-    uint32_t eip, cs, eflags, useresp, ss;
+    u32 cr2;
+    u32 edi, esi, ebp, esp, ebx, edx, ecx, eax;
+    u32 int_no, err_code;
+    u32 eip, cs, eflags, useresp, ss;
 } InterruptRegisters;
 
 void init_idt();
 void irq_install_handler(u32 irq, void (*handler)(InterruptRegisters* reg));
-void syscall_handler();
+
+void pic_eoi(u8 irq);
 
 #endif // INTERRUPT_H_

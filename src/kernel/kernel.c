@@ -17,16 +17,6 @@ const void *kernel_start_vaddr = &_kernel_start_vaddr;
 const u32 kernel_end_paddr = (u32) &_kernel_end_paddr;
 const void *kernel_end_vaddr = &_kernel_end_vaddr;
 
-void usermode_function() {
-    terminal_printf("Usermode!\n");
-    terminal_printf("CPL: %u\n", get_privilege_level());
-    asm ("int $0x80");
-    terminal_printf("CPL: %u\n", get_privilege_level());
-    for (;;) {
-        asm ("nop");
-    }
-}
-
 void kernel_main(void) {
     if (!(multiboot_info->flags & MB_FLAG_FRAMEBUFFER)) {
         // No terminal info is available. Something went wrong and there's no
@@ -63,6 +53,7 @@ void kernel_main(void) {
     terminal_printf("Initializing serial io...\n");
     serial_init();
 
+    terminal_printf("Initializing the sun...\n");
     sun_init();
 
 #ifdef TESTS_ENABLED // Test Flag should be passed to build script
@@ -70,6 +61,10 @@ void kernel_main(void) {
 #endif
 
     exec_sun("test.out");
+    exec_sun("test2.out");
+
+    scheduler_init();
+    schedule();
 
     for (;;) {
         asm ("hlt");

@@ -1,5 +1,6 @@
 #include "interrupt.h"
 #include "kernel/init.h"
+#include "kernel/kernel.h"
 #include "lib/error.h"
 #include "terminal/terminal.h"
 #include "drivers/keyboard/keyboard.h"
@@ -39,11 +40,6 @@ void* irq_routines[16] = {
     0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0
 };
-
-void syscall_handler() {
-    terminal_printf("syscalled!\n");
-    terminal_printf("CPL: %u\n", get_privilege_level());
-}
 
 /**
  * @brief Enables Programmable Interrupt Controller

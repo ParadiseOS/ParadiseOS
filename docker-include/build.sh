@@ -4,16 +4,17 @@ set -e
 
 export PATH="/usr/app/cross-compiler/bin:$PATH"
 
+cp scripts/grub.cfg paradise-os/boot/grub
+
 if [ "$TESTS_ENABLED" = "true" ]; then
     TESTS_FLAG="-DTESTS_ENABLED"
 else
     TESTS_FLAG=""
 fi
 
-
 find src -type f -name "*.c" | while read -r file; do
     output="bin/$(basename -s .c "$file").o"
-    i686-elf-gcc -c "$file" -o "$output" -std=gnu99 -ffreestanding -g -Wall -Wextra -Isrc $TESTS_FLAG
+    i686-elf-gcc -c "$file" -o "$output" -std=gnu99 -ffreestanding -ggdb -masm=intel -Wall -Wextra -Isrc $TESTS_FLAG
 done
 
 find src -type f -name "*.s" | while read -r file; do

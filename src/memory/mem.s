@@ -21,3 +21,8 @@ load_page_dir:
     mov eax, [esp+0x04]
     mov cr3, eax
     ret
+
+public get_page_dir_paddr
+get_page_dir_paddr:
+    mov eax, cr3
+    ret
