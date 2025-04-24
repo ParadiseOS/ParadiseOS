@@ -10,6 +10,8 @@
 #define PAGE_WRITABLE    2 // Can user write?
 #define PAGE_GLOBAL    512 // Flush from TLB on CR3 reload?
 
+extern u32 kernel_page_dir;
+
 extern void load_page_dir(u32 paddr);
 
 u32 size_in_pages(u32 size_in_bytes);

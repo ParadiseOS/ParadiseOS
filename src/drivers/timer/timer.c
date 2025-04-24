@@ -1,23 +1,18 @@
 #include "timer.h"
+#include "interrupts/interrupt.h"
 #include "lib/types.h"
 #include "lib/util.h"
-#include "terminal/terminal.h" // Used for testing
+#include "terminal/terminal.h"
 
-u64 ticks;
-const u32 freq = 100;
+void (*timer_callback)(InterruptRegisters *regs) = NULL;
+const u32 freq = 1000;
 
-void timer_handler() {
-    ++ticks;
-
-    #ifdef TESTS_ENABLED
-    if (ticks % 100 == 0) // Prints every second
-        terminal_printf("Timer ticked..\n");
-    #endif
+void timer_handler(InterruptRegisters *regs) {
+    if (timer_callback) timer_callback(regs);
 }
 
 void init_timer() {
-    ticks = 0;
-    irq_install_handler(0, &timer_handler);
+    irq_install_handler(0, timer_handler);
 
     // PIT oscillates 1.1931816666 Mhz
     u32 divisor = 1193180 / freq;

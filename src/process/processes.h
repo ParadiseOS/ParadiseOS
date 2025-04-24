@@ -48,28 +48,27 @@ typedef struct __attribute__((packed, aligned(PAGE_SIZE))) {
 } Tss;
 
 typedef struct {
-    u16 pid;
     u32 page_dir_paddr;
 } Process;
 
 typedef struct {
+    u32 edi, esi, ebp, esp, ebx, edx, ecx, eax;
+    u32 eflags;
     u32 eip;
-    u32 EFLAGS;
-    u32 eax;
-    u32 ecx;
-    u32 edx;
-    u32 ebx;
-    u32 esp;
-    u32 ebp;
-    u32 esi;
-    u32 edi;
 
     void *prog_brk;
 } ProcessControlBlock;
 
-__attribute__((noreturn))
+typedef struct {
+    u32 edi, esi, ebp, esp, ebx, edx, ecx, eax;
+    u32 eip, cs, eflags, useresp;
+} CpuContext;
+
 void exec_sun(const char *name);
 
-extern __attribute__((noreturn)) void jump_usermode(void (*f)(), void *stack);
+__attribute__((noreturn))
+void schedule();
+
+void scheduler_init();
 
 #endif

@@ -39,14 +39,11 @@ RUN make install-gcc
 RUN make install-target-libgcc
 
 WORKDIR /usr/app
-
-COPY docker-include/build.sh .
-RUN chmod +x build.sh
-
+RUN mkdir scripts
 RUN mkdir bin
+
 RUN mkdir -p paradise-os/boot/grub
-COPY docker-include/grub.cfg paradise-os/boot/grub
 
 ARG TESTS_ENABLED
 
-CMD ["./build.sh"] 
+CMD ["sh", "scripts/build.sh"]

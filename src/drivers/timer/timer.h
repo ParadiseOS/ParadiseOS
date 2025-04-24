@@ -3,7 +3,8 @@
 
 #include "interrupts/interrupt.h"
 
-void timer_handler();
+extern void (*timer_callback)(InterruptRegisters *regs);
+
 void init_timer();
 
 #endif // TIMER_H_

@@ -16,6 +16,7 @@
 
 extern void invalidate_page(void *vaddr);
 extern void flush_tlb();
+extern u32 get_page_dir_paddr();
 
 u32 *page_directory_entries = (u32 *) 0xFFFFF000;
 u32 *page_table_entries = (u32 *) 0xFFC00000;
@@ -29,6 +30,8 @@ u32 *page_table_entries = (u32 *) 0xFFC00000;
 #define PTE_USER_MODE   4 // Can user access?
 #define PTE_WRITABLE    2 // Can user write?
 #define PTE_GLOBAL    512 // Flush from TLB on CR3 reload?
+
+u32 kernel_page_dir = 0;
 
 u32 *free_list_head = NULL;
 u32 *free_list_head_pte = NULL;
@@ -292,6 +295,7 @@ void init_heap() {
 // Performs all operations required to initialize our kernel memory management.
 void mem_init() {
     asm ("cli"); // Probably don't want interrupts while doing this
+    kernel_page_dir = get_page_dir_paddr();
     init_free_list_page();
     init_frames();
     reinit_paging();

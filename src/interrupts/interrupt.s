@@ -97,7 +97,11 @@ public syscall_wrapper
 syscall_wrapper:
     cli
     pushad
+
+    push esp
     call syscall_handler
+
+    add esp, 4
     popad
     sti
     iret
