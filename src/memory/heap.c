@@ -90,9 +90,9 @@ void heap_init(Heap *heap, void *heap_start, u32 page_count) {
 
     // size of our usage map
     u32 byte_size = (page_count + 3) / 4;
-    u32 page_size = (byte_size + PAGE_SIZE - 1) / PAGE_SIZE;
+    u32 page_size = size_in_pages(byte_size);
 
-    alloc_pages(heap_start, page_size);
+    alloc_pages(heap_start, PAGE_WRITABLE, page_size);
     pmemset(heap_start, HEAP_PAGE_FREE, byte_size);
 
     heap->usage_map = heap_start;

@@ -1,2 +1,6 @@
 target remote localhost:1234
 symbol-file build/paradise-os.bin
+define six
+si
+x/i $eip
+end

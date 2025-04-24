@@ -29,3 +29,13 @@ TableEntry *sun_exe_lookup(const char *name) {
 void sun_load_text(TableEntry *entry, u8 *buffer) {
     pmemcpy(buffer, ((char *) &sun_file) + entry->offset, entry->text_size);
 }
+
+void sun_load_rodata(TableEntry *entry, u8 *buffer) {
+    u32 offset = entry->text_size;
+    pmemcpy(buffer, ((char *) &sun_file) + offset, entry->rodata_size);
+}
+
+void sun_load_data(TableEntry *entry, u8 *buffer) {
+    u32 offset = entry->text_size + entry->rodata_size;
+    pmemcpy(buffer, ((char *) &sun_file) + offset, entry->data_size);
+}

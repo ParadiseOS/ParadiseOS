@@ -69,14 +69,7 @@ void kernel_main(void) {
     kernel_test();
 #endif
 
-    TableEntry *test = sun_exe_lookup("test.out");
-    terminal_printf("entry_point: %x\n", test->entry_point);
-    terminal_printf("text_size: %x\n", test->text_size);
-    terminal_printf("data_size: %x\n", test->data_size);
-    terminal_printf("rodata_size: %x\n", test->rodata_size);
-    terminal_printf("bss_size: %x\n", test->bss_size);
-
-    exec("test.out");
+    exec_sun("test.out");
 
     for (;;) {
         asm ("hlt");
