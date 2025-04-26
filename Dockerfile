@@ -40,10 +40,12 @@ RUN make install-target-libgcc
 
 WORKDIR /usr/app
 RUN mkdir scripts
+RUN mkdir elf2sun
 RUN mkdir bin
 
 RUN mkdir -p paradise-os/boot/grub
 
 ARG TESTS_ENABLED
+ARG BUILD_PROGRAMS
 
 CMD ["sh", "scripts/build.sh"]

@@ -6,11 +6,26 @@ export PATH="/usr/app/cross-compiler/bin:$PATH"
 
 cp scripts/grub.cfg paradise-os/boot/grub
 
-if [ "$TESTS_ENABLED" = "true" ]; then
+if [ "$TESTS_ENABLED" = true ]; then
     TESTS_FLAG="-DTESTS_ENABLED"
 else
     TESTS_FLAG=""
 fi
+
+if [ "$BUILD_PROGRAMS" = true ]; then
+    printf -- "---------------------------------------\n"
+    printf -- "---------- BUILDING PROGRAMS ----------\n"
+    printf -- "---------------------------------------\n"
+    cd elf2sun
+    ./build_programs.sh
+    cd ..
+    mv ./elf2sun/binary.sun ./build
+    printf "\n"
+fi
+
+printf -- "---------------------------------------\n"
+printf -- "---------- BUILDING PARADISE ----------\n"
+printf -- "---------------------------------------\n"
 
 find src -type f -name "*.c" | while read -r file; do
     output="bin/$(basename -s .c "$file").o"
@@ -25,7 +40,7 @@ done
 i686-elf-gcc -T src/boot/linker.ld -o build/paradise-os.bin -ffreestanding -nostdlib bin/*.o -lgcc
 
 if ! grub-file --is-x86-multiboot build/paradise-os.bin; then
-    echo "Failed to build bootable cdrom: paradise-os.bin is not multiboot"
+    printf "Failed to build bootable cdrom: paradise-os.bin is not multiboot"
     exit 1
 fi
 
