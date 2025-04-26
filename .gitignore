@@ -1,4 +1,5 @@
 *.iso
 *.bin
+*.sun
 .clangd
 /.vscode
