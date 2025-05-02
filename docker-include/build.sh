@@ -17,6 +17,8 @@ if [ "$BUILD_PROGRAMS" = true ]; then
     printf -- "---------- BUILDING PROGRAMS ----------\n"
     printf -- "---------------------------------------\n"
     cd elf2sun
+    printf "Clearing elf2sun/build.sh\n"
+    rm build/*.out
     ./build_programs.sh
     cd ..
     mv ./elf2sun/binary.sun ./build
