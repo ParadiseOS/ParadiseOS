@@ -18,7 +18,7 @@ jump_usermode:
     push 0x23
     push eax
     mov eax, [edx+0x20]
-    or eax, (1 shl 9)
+    or eax, (1 shl 9) ; ensure interrupts are enabled when we enter user-mode
     push eax
     push 0x1b
     push ecx

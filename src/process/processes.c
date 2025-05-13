@@ -14,6 +14,8 @@
 #define PROCESS_ORG ((void *) 0x401000)
 #define PCB_ADDR (PROCESS_ORG - PAGE_SIZE)
 
+#define INIT_EFLAGS 0b1000000010
+
 Process processes[MAX_PROCS] = {0};
 i32 running_pid = -1;
 u32 process_count = 0;
@@ -46,7 +48,7 @@ void exec_sun(const char *name) {
     u32 page_dir = new_page_dir();
     load_page_dir(page_dir);
 
-    alloc_pages(text, PAGE_WRITABLE | PAGE_USER_MODE, (rodata - text) / PAGE_SIZE);
+    alloc_pages(text, PAGE_USER_MODE, (rodata - text) / PAGE_SIZE);
     if (entry->rodata_size) alloc_pages(rodata, PAGE_USER_MODE, (data - rodata) / PAGE_SIZE);
     if (entry->data_size) alloc_pages(data, PAGE_WRITABLE | PAGE_USER_MODE, (bss - data) / PAGE_SIZE);
     if (entry->bss_size) alloc_pages(bss, PAGE_WRITABLE | PAGE_USER_MODE, (heap - bss) / PAGE_SIZE);
@@ -61,6 +63,8 @@ void exec_sun(const char *name) {
     pcb->prog_brk = heap;
     pcb->eip = (u32) entry->entry_point;
     pcb->esp = (u32) stack;
+    pcb->eflags = INIT_EFLAGS;
+    pcb->page_dir_paddr = page_dir;
 
     load_page_dir(kernel_page_dir);
 
@@ -78,6 +82,7 @@ void schedule() {
         if (processes[i].page_dir_paddr != 0) {
             ProcessControlBlock *pcb = PCB_ADDR;
             load_page_dir(processes[i].page_dir_paddr);
+            KERNEL_ASSERT(pcb->page_dir_paddr == processes[i].page_dir_paddr);
             running_pid = i;
             jump_usermode((void (*)()) pcb->eip, (void *) pcb->esp, pcb);
         }
@@ -86,21 +91,29 @@ void schedule() {
 
 void syscall_handler(CpuContext *ctx) {
     terminal_putchar(ctx->eax);
-    terminal_putchar('\n');
+    terminal_putchar(' ');
+}
+
+bool is_user_mode(u32 cs) {
+    return (cs & 3) == 3;
 }
 
 void preempt(InterruptRegisters *regs) {
-    if (running_pid == -1) return;
+    if (is_user_mode(regs->cs)) {
+        ProcessControlBlock *pcb = PCB_ADDR;
 
-    ProcessControlBlock *pcb = PCB_ADDR;
-    pmemcpy(pcb, (u32 *) regs + 1, 8 * sizeof (u32));
-    pcb->eflags = regs->eflags;
-    pcb->eip = regs->eip;
-    pcb->esp = regs->useresp;
+        pmemcpy(pcb, (u32 *)regs + 1, 8 * sizeof(u32));
+        pcb->eflags = regs->eflags;
+        pcb->eip = regs->eip;
+        pcb->esp = regs->useresp;
 
-    running_pid += 1;
-    pic_eoi(regs->int_no - 32);
-    schedule();
+        running_pid += 1;
+        pic_eoi(regs->int_no - 32);
+        schedule(); // no return
+    }
+    else {
+        pic_eoi(regs->int_no - 32);
+    }
 }
 
 void scheduler_init() {
