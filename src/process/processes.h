@@ -51,12 +51,15 @@ typedef struct {
     u32 page_dir_paddr;
 } Process;
 
+// NOTE: we assume the offsets of members up to eflags in the assembly so things
+// will break if thats changed
 typedef struct {
     u32 edi, esi, ebp, esp, ebx, edx, ecx, eax;
     u32 eflags;
     u32 eip;
 
     void *prog_brk;
+    u32 page_dir_paddr;
 } ProcessControlBlock;
 
 typedef struct {

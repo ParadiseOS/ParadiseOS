@@ -13,6 +13,7 @@
 extern u32 kernel_page_dir;
 
 extern void load_page_dir(u32 paddr);
+extern u32 get_page_dir_paddr();
 
 u32 size_in_pages(u32 size_in_bytes);
 u32 align_next_frame(u32 paddr);

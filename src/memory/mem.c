@@ -16,7 +16,6 @@
 
 extern void invalidate_page(void *vaddr);
 extern void flush_tlb();
-extern u32 get_page_dir_paddr();
 
 u32 *page_directory_entries = (u32 *) 0xFFFFF000;
 u32 *page_table_entries = (u32 *) 0xFFC00000;
