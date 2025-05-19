@@ -3,6 +3,7 @@
 
 #include "lib/types.h"
 #include "boot/multiboot.h"
+#include "heap.h"
 
 #define PAGE_SIZE 4096
 
@@ -18,6 +19,7 @@ extern u32 get_page_dir_paddr();
 u32 size_in_pages(u32 size_in_bytes);
 u32 align_next_frame(u32 paddr);
 void *align_next_page(void *vaddr);
+bool is_page_aligned(void *ptr);
 
 void mem_init();
 void map_pages(void *vaddr, u32 paddr, u16 flags, u32 count);
@@ -25,6 +27,10 @@ void map_pages(void *vaddr, u32 paddr, u16 flags, u32 count);
 u32 new_page_dir();
 
 void alloc_pages(void *vaddr, u16 flags, u32 count);
+
+void *mem_alloc(Heap *heap, u32 pages);
+void *mem_realloc(Heap *heap, void *ptr, u32 pages);
+void mem_free(Heap *heap, void *ptr);
 
 void *kernel_alloc(u32 pages);
 void *kernel_realloc(void *ptr, u32 pages);

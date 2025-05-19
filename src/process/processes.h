@@ -67,7 +67,7 @@ typedef struct {
     u32 eip, cs, eflags, useresp;
 } CpuContext;
 
-void exec_sun(const char *name);
+void exec_sun(const char *name, int arg);
 
 __attribute__((noreturn))
 void schedule();

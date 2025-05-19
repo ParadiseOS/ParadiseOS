@@ -32,17 +32,17 @@ u16 next_pid() {
     KERNEL_ASSERT(FALSE);
 }
 
-void exec_sun(const char *name) {
+void exec_sun(const char *name, int arg) {
     TableEntry *entry = sun_exe_lookup(name);
 
     KERNEL_ASSERT(entry->text_size);
 
     ProcessControlBlock *pcb = PCB_ADDR;
     void *text = PROCESS_ORG;
-    void *rodata = align_next_page(text + entry->text_size);
-    void *data = align_next_page(rodata + entry->rodata_size);
-    void *bss = align_next_page(data + entry->data_size);
-    void *heap = align_next_page(bss + entry->bss_size);
+    void *rodata = align_next_page(text + entry->text_size - 1);
+    void *data = align_next_page(rodata + entry->rodata_size - 1);
+    void *bss = align_next_page(data + entry->data_size - 1);
+    void *heap = align_next_page(bss + entry->bss_size - 1);
     void *stack = STACK_TOP;
 
     u32 page_dir = new_page_dir();
@@ -65,6 +65,7 @@ void exec_sun(const char *name) {
     pcb->esp = (u32) stack;
     pcb->eflags = INIT_EFLAGS;
     pcb->page_dir_paddr = page_dir;
+    pcb->eax = arg;
 
     load_page_dir(kernel_page_dir);
 
