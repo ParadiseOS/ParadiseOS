@@ -36,7 +36,7 @@ u32 *free_list_head = NULL;
 u32 *free_list_head_pte = NULL;
 u32 free_frame_paddr = 0;
 
-Heap heap;
+Heap kernel_heap;
 
 u32 get_pd_index(void *vaddr) {
     return (u32) vaddr >> 22;
@@ -181,17 +181,16 @@ void *align_next_page(void *vaddr) {
     return (void *) align_next_frame((u32) vaddr);
 }
 
+bool is_page_aligned(void *ptr) {
+    return ((u32) ptr << 20) == 0;
+}
+
 // Initializes the page which represents the head of our list of free frames and
 // allows us to manipulate it. This page will be placed right after the kernel.
 void init_free_list_page() {
-    void *addr = align_next_page((void *) kernel_end_vaddr);
+    void *addr = align_next_page((void *) kernel_end_vaddr - 1);
     u32 pdi = get_pd_index(addr);
     u32 pti = get_pt_index(addr);
-
-    terminal_printf("ks %p\n", kernel_start_vaddr);
-    terminal_printf("ke %p\n", kernel_end_vaddr);
-    terminal_printf("size %p\n", kernel_end_vaddr - kernel_start_vaddr);
-    terminal_printf("a %p\n", addr);
 
     free_list_head_pte = &PTE(pdi, pti);
     KERNEL_ASSERT(entry_present(PDE(pdi)));
@@ -228,8 +227,6 @@ void reinit_paging() {
     void *id_map_vaddr = (void *) (kernel_offset - (1 << 24));
     void *kernel_map_vaddr = (void *) (kernel_start_vaddr - (2 << 24));
 
-    terminal_printf("%p+%x\n", kernel_start_vaddr, kernel_page_count);
-
     KERNEL_ASSERT(kernel_page_count <= MAX_KERNEL_PAGE_COUNT);
 
     map_pages(id_map_vaddr, 0, PAGE_WRITABLE, LOWER_MEM_PAGE_COUNT);
@@ -257,7 +254,7 @@ void reinit_paging() {
 
 // Extends free frame list using a given range of frames
 void init_frame_region(u32 start_addr, u32 end_addr) {
-    start_addr = align_next_frame(start_addr);
+    start_addr = align_next_frame(start_addr - 1);
 
     for (u32 f = start_addr; f < end_addr; f += PAGE_SIZE) {
         free_frame(f);
@@ -273,7 +270,7 @@ void init_frames() {
     for (u32 i = 0; i < multiboot_info->mmap_length / sizeof (MMapEntry); i++) {
         if (entries[i].type == MMAP_AVAILABLE && entries[i].base_addr_lo >= (u32) kernel_start_paddr) {
             if (entries[i].base_addr_lo == (u32) kernel_start_paddr)
-                init_frame_region((u32) kernel_end_paddr - 1, entries[i].base_addr_lo + entries[i].length_lo);
+                init_frame_region((u32) kernel_end_paddr, entries[i].base_addr_lo + entries[i].length_lo);
             else
                 init_frame_region(entries[i].base_addr_lo, entries[i].base_addr_lo + entries[i].length_lo);
         }
@@ -286,9 +283,7 @@ void init_heap() {
     void *heap_addr = (void *) free_list_head + PAGE_SIZE;
     u32 page_count = ((void *) page_table_entries - heap_addr) / PAGE_SIZE;
 
-    terminal_printf("%p\n", free_list_head);
-
-    heap_init(&heap, heap_addr, page_count);
+    heap_init(&kernel_heap, heap_addr, page_count);
 }
 
 // Performs all operations required to initialize our kernel memory management.
@@ -304,9 +299,9 @@ void mem_init() {
 
 // Allocates a given number of pages on the heap. Empty allocations are not
 // allowed.
-void *kernel_alloc(u32 pages) {
+void *mem_alloc(Heap *heap, u32 pages) {
     KERNEL_ASSERT(pages);
-    void *vaddr = heap_alloc(&heap, pages);
+    void *vaddr = heap_alloc(heap, pages);
     alloc_pages(vaddr, PAGE_WRITABLE, pages);
     return vaddr;
 }
@@ -314,11 +309,11 @@ void *kernel_alloc(u32 pages) {
 // Reallocates an existing allocation to a new size. This may require moving the
 // pointer and copying the data so the new pointer is returned. If a different
 // pointer is returned, the old pointer is invalidated.
-void *kernel_realloc(void *ptr, u32 pages) {
+void *mem_realloc(Heap *heap, void *ptr, u32 pages) {
     KERNEL_ASSERT(pages);
 
     void *new_ptr;
-    u32 old_size = heap_realloc(&heap, ptr, &new_ptr, pages);
+    u32 old_size = heap_realloc(heap, ptr, &new_ptr, pages);
 
     if (new_ptr != ptr) {
         alloc_pages(new_ptr, PAGE_WRITABLE, pages);
@@ -338,9 +333,23 @@ void *kernel_realloc(void *ptr, u32 pages) {
 }
 
 // Frees an existing allocation.
-void kernel_free(void *ptr) {
-    u32 freed_count = heap_free(&heap, ptr);
+void mem_free(Heap *heap, void *ptr) {
+    u32 freed_count = heap_free(heap, ptr);
     free_pages(ptr, freed_count);
+}
+
+// Kernel heap allocator
+
+void *kernel_alloc(u32 pages) {
+    return mem_alloc(&kernel_heap, pages);
+}
+
+void *kernel_realloc(void *ptr, u32 pages) {
+    return mem_realloc(&kernel_heap, ptr, pages);
+}
+
+void kernel_free(void *ptr) {
+    return mem_free(&kernel_heap, ptr);
 }
 
 // Ensures that heap pages are marked as used if and only if their corresponding
@@ -348,11 +357,11 @@ void kernel_free(void *ptr) {
 // thus should only be used for debugging purposes. We also print a
 // representation of the usage of the first `pages` pages of the heap.
 void debug_heap(u32 pages) {
-    for (void *addr = heap.heap_start; addr < (void *) page_table_entries; addr += PAGE_SIZE) {
-        KERNEL_ASSERT(heap_is_used(&heap, addr) == entry_present(get_entry(addr)));
+    for (void *addr = kernel_heap.heap_start; addr < (void *) page_table_entries; addr += PAGE_SIZE) {
+        KERNEL_ASSERT(heap_is_used(&kernel_heap, addr) == entry_present(get_entry(addr)));
     }
 
-    heap_debug(&heap, pages);
+    heap_debug(&kernel_heap, pages);
 }
 
 // Creates a new page directory and returns its frame address
@@ -374,6 +383,6 @@ u32 new_page_dir() {
     dir[1023] = create_entry(get_paddr(get_entry(dir)), PDE_WRITABLE);
 
     // We don't actually want to free the frame
-    heap_free(&heap, dir);
+    heap_free(&kernel_heap, dir);
     return unmap_page(dir);
 }

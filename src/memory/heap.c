@@ -14,10 +14,6 @@
 // NOTE: all of these functions that search by bits can be greatly optimized by
 // searching by bytes or even dwords instead.
 
-bool is_page_aligned(void *ptr) {
-    return ((u32) ptr << 20) == 0;
-}
-
 // Returns the two bits representing the usage state of a given page. The state
 // can be FREE, USED_RED, USED_GREEN, or USED_BLUE. `index` should be the index
 // of the page we are checking starting from the first page of the heap.
