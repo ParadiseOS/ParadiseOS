@@ -2,6 +2,7 @@
 #define PROCESS_H_
 
 #include "lib/types.h"
+#include "memory/heap.h"
 #include "memory/mem.h"
 
 #define TSS_SIZE 104
@@ -60,7 +61,11 @@ typedef struct {
 
     void *prog_brk;
     u32 page_dir_paddr;
+
+    Heap heap;
 } ProcessControlBlock;
+
+_Static_assert(sizeof (ProcessControlBlock) <= PAGE_SIZE, "PCB too large");
 
 typedef struct {
     u32 edi, esi, ebp, esp, ebx, edx, ecx, eax;

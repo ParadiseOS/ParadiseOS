@@ -35,6 +35,8 @@ u32 kernel_page_dir = 0;
 u32 *free_list_head = NULL;
 u32 *free_list_head_pte = NULL;
 u32 free_frame_paddr = 0;
+u32 used_frames = 0;
+u32 total_frames = 0;
 
 Heap kernel_heap;
 
@@ -80,6 +82,7 @@ void init_page_table(u32 *table) {
 
 // Reclaims a frame of physical memory.
 void free_frame(u32 paddr) {
+    --used_frames;
     *free_list_head_pte = create_entry(paddr, PTE_WRITABLE);
     invalidate_page(free_list_head);
     *free_list_head = free_frame_paddr;
@@ -90,11 +93,16 @@ void free_frame(u32 paddr) {
 // need to be mapped.
 u32 alloc_frame() {
     KERNEL_ASSERT(free_frame_paddr); // are we out of memory?
+    ++used_frames;
     u32 frame = free_frame_paddr;
     free_frame_paddr = *free_list_head;
     *free_list_head_pte = create_entry(free_frame_paddr, PTE_WRITABLE);
     invalidate_page(free_list_head);
     return frame;
+}
+
+void print_frame_usage() {
+    terminal_printf("Usage: %u/%u\n", used_frames, total_frames);
 }
 
 // Maps a page in virtual memory. Does not back it with a physical address.
@@ -257,6 +265,8 @@ void init_frame_region(u32 start_addr, u32 end_addr) {
     start_addr = align_next_frame(start_addr - 1);
 
     for (u32 f = start_addr; f < end_addr; f += PAGE_SIZE) {
+        ++total_frames;
+        ++used_frames;
         free_frame(f);
     }
 }
