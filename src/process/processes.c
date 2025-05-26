@@ -4,11 +4,13 @@
 #include "kernel/kernel.h"
 #include "lib/error.h"
 #include "lib/libp.h"
+#include "memory/heap.h"
 #include "memory/mem.h"
 #include "sun/sun.h"
 #include "terminal/terminal.h"
 
 #define MAX_PROCS 0x10000
+#define MAX_HEAP_SIZE 0x100000
 #define STACK_SIZE (4 * PAGE_SIZE)
 #define STACK_TOP ((void *) 0xbfc00000)
 #define PROCESS_ORG ((void *) 0x401000)
@@ -66,6 +68,8 @@ void exec_sun(const char *name, int arg) {
     pcb->eflags = INIT_EFLAGS;
     pcb->page_dir_paddr = page_dir;
     pcb->eax = arg;
+
+    heap_init(&pcb->heap, heap, MAX_HEAP_SIZE);
 
     load_page_dir(kernel_page_dir);
 

@@ -21,6 +21,8 @@ u32 align_next_frame(u32 paddr);
 void *align_next_page(void *vaddr);
 bool is_page_aligned(void *ptr);
 
+void print_frame_usage();
+
 void mem_init();
 void map_pages(void *vaddr, u32 paddr, u16 flags, u32 count);
 
