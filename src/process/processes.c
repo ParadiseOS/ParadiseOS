@@ -8,12 +8,14 @@
 #include "memory/mem.h"
 #include "sun/sun.h"
 #include "terminal/terminal.h"
+#include "ipc/mailbox.h"
 
 #define MAX_PROCS 0x10000
 #define STACK_SIZE (4 * PAGE_SIZE)
 #define STACK_TOP ((void *) 0xbfc00000)
 #define PROCESS_ORG ((void *) 0x401000)
 #define PCB_ADDR (PROCESS_ORG - PAGE_SIZE)
+#define MAILBOX_ADDR (PCB_ADDR - PAGE_SIZE)
 
 #define INIT_EFLAGS 0b1000000010
 
@@ -39,6 +41,7 @@ void exec_sun(const char *name, int arg) {
     KERNEL_ASSERT(entry->text_size);
 
     ProcessControlBlock *pcb = PCB_ADDR;
+    Mailbox *mailbox = MAILBOX_ADDR;
     void *text = PROCESS_ORG;
     void *rodata = align_next_page(text + entry->text_size - 1);
     void *data = align_next_page(rodata + entry->rodata_size - 1);
@@ -57,6 +60,7 @@ void exec_sun(const char *name, int arg) {
     if (entry->bss_size) alloc_pages(bss, PAGE_WRITABLE | PAGE_USER_MODE, (heap - bss) / PAGE_SIZE);
     alloc_pages(stack - STACK_SIZE, PAGE_WRITABLE | PAGE_USER_MODE, STACK_SIZE / PAGE_SIZE);
     alloc_pages(pcb, PAGE_WRITABLE, 1);
+    alloc_pages(mailbox, PAGE_WRITABLE, 1);
 
     sun_load_text(entry, text);
     sun_load_rodata(entry, rodata);
@@ -73,6 +77,7 @@ void exec_sun(const char *name, int arg) {
     heap_init(&pcb->heap, heap, heap_pages);
 
     load_page_dir(kernel_page_dir);
+    Mailbox_Init_Temp(mailbox);
 
     u16 pid = next_pid();
     processes[pid].page_dir_paddr = page_dir;
@@ -96,8 +101,21 @@ void schedule() {
 }
 
 void syscall_handler(CpuContext *ctx) {
-    terminal_putchar(ctx->eax);
-    terminal_putchar(' ');
+    // Come up with some syscall format for the print server
+    // Maybe set something like eax to 1 to set for printing
+    // Put a pointer to the data in ecx
+    // Then the size is edx
+
+    if (ctx->eax == 1) { 
+        for (u32 len = 0; len < ctx->edx; len++) {
+            terminal_putchar(*((char*)ctx->ecx + len));
+        }
+        terminal_putchar('\n');
+    } else if (ctx->eax == 2) { // Expects null terminated string as the pointer.
+        terminal_printf("%s\n", ctx->ecx);
+    } else {
+        terminal_printf("Unknown syscall :(\n");
+    }
 }
 
 bool is_user_mode(u32 cs) {

@@ -60,11 +60,9 @@ void kernel_main(void) {
     kernel_test();
 #endif
 
-    exec_sun("echo.out", 'A');
-    exec_sun("echo.out", 'B');
-    exec_sun("echo.out", 'C');
-    exec_sun("echo.out", 'D');
-    exec_sun("echo.out", 'E');
+    // exec_sun("proca.out");
+    // exec_sun("procb.out");
+    exec_sun("printer.out", 0);
 
     scheduler_init();
     schedule();
