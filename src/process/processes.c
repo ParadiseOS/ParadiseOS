@@ -10,7 +10,6 @@
 #include "terminal/terminal.h"
 
 #define MAX_PROCS 0x10000
-#define MAX_HEAP_SIZE 0x100000
 #define STACK_SIZE (4 * PAGE_SIZE)
 #define STACK_TOP ((void *) 0xbfc00000)
 #define PROCESS_ORG ((void *) 0x401000)
@@ -47,6 +46,8 @@ void exec_sun(const char *name, int arg) {
     void *heap = align_next_page(bss + entry->bss_size - 1);
     void *stack = STACK_TOP;
 
+    u32 heap_pages = ((u32) STACK_TOP - (u32) heap) / PAGE_SIZE;
+
     u32 page_dir = new_page_dir();
     load_page_dir(page_dir);
 
@@ -69,7 +70,7 @@ void exec_sun(const char *name, int arg) {
     pcb->page_dir_paddr = page_dir;
     pcb->eax = arg;
 
-    heap_init(&pcb->heap, heap, MAX_HEAP_SIZE);
+    heap_init(&pcb->heap, heap, heap_pages);
 
     load_page_dir(kernel_page_dir);
 
