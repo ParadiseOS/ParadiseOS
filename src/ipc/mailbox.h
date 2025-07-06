@@ -31,16 +31,12 @@ typedef struct {
 typedef MailboxHead Mailbox;
 
 // Temporary mailbox initialization. Treats an address like a mailbox.
-void Mailbox_Init_Temp(Mailbox* mailbox);
+void mailbox_init_temp(Mailbox* mailbox);
 
-// DO NOT USE - Initializes a mailbox
-Mailbox* Mailbox_Init();
+// Sends a message to a mailbox
+int send_message(MailboxHead* mailbox, u16 sender_pid, u8 data_size, const char* data);
 
-// DO NOT USE - Frees a mailbox
-void Mailbox_Free(MailboxHead* mailbox);
-
-// DO NOT USE - Increases the size of the mailbox
-int Mailbox_Grow(MailboxHead* mailbox);
-
-// DO NOT USE - Adds a message to a mailbox
-int receive_message(Mailbox* mailbox, Mailbox_Message* message);
+/** Reads a message from a mailbox into str[258]
+ *  Returns True if a message was read, otherwise FALSE
+ */
+bool read_message(MailboxHead* mailbox, char* str);
