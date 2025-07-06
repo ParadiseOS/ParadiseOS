@@ -13,9 +13,9 @@
 #define MAX_PROCS 0x10000
 #define STACK_SIZE (4 * PAGE_SIZE)
 #define STACK_TOP ((void *) 0xbfc00000)
-#define PROCESS_ORG ((void *) 0x401000)
-#define PCB_ADDR (PROCESS_ORG - PAGE_SIZE)
-#define MAILBOX_ADDR (PCB_ADDR - PAGE_SIZE)
+#define PROCESS_ORG ((void *) 0x402000)
+#define MAILBOX_ADDR (PROCESS_ORG - PAGE_SIZE)
+#define PCB_ADDR (MAILBOX_ADDR - PAGE_SIZE)
 
 #define INIT_EFLAGS 0b1000000010
 
@@ -59,13 +59,14 @@ void exec_sun(const char *name, int arg) {
     if (entry->data_size) alloc_pages(data, PAGE_WRITABLE | PAGE_USER_MODE, (bss - data) / PAGE_SIZE);
     if (entry->bss_size) alloc_pages(bss, PAGE_WRITABLE | PAGE_USER_MODE, (heap - bss) / PAGE_SIZE);
     alloc_pages(stack - STACK_SIZE, PAGE_WRITABLE | PAGE_USER_MODE, STACK_SIZE / PAGE_SIZE);
-    alloc_pages(pcb, PAGE_WRITABLE, 1);
     alloc_pages(mailbox, PAGE_WRITABLE, 1);
+    alloc_pages(pcb, PAGE_WRITABLE, 1);
 
     sun_load_text(entry, text);
     sun_load_rodata(entry, rodata);
     sun_load_data(entry, data);
     pmemset(bss, 0, entry->bss_size);
+    mailbox_init_temp(mailbox);
 
     pcb->prog_brk = heap;
     pcb->eip = (u32) entry->entry_point;
@@ -77,7 +78,6 @@ void exec_sun(const char *name, int arg) {
     heap_init(&pcb->heap, heap, heap_pages);
 
     load_page_dir(kernel_page_dir);
-    Mailbox_Init_Temp(mailbox);
 
     u16 pid = next_pid();
     processes[pid].page_dir_paddr = page_dir;
@@ -101,20 +101,73 @@ void schedule() {
 }
 
 void syscall_handler(CpuContext *ctx) {
-    // Come up with some syscall format for the print server
-    // Maybe set something like eax to 1 to set for printing
-    // Put a pointer to the data in ecx
-    // Then the size is edx
 
-    if (ctx->eax == 1) { 
-        for (u32 len = 0; len < ctx->edx; len++) {
-            terminal_putchar(*((char*)ctx->ecx + len));
+    // $eax determines what the syscall does
+    switch (ctx->eax) {
+
+    // Print string
+    // $ebx -> pointer to the string
+    // $ecx -> the size of the string
+    case 1:
+    {
+        for (u32 i = 0; i < ctx->ecx; i++) {
+            terminal_putchar(*((char*)ctx->ebx + i));
         }
         terminal_putchar('\n');
-    } else if (ctx->eax == 2) { // Expects null terminated string as the pointer.
-        terminal_printf("%s\n", ctx->ecx);
-    } else {
+    }
+    break;
+
+    // Print null-terminated string
+    // $ebx -> pointer to the string
+    case 2:
+    {
+        terminal_printf("%s\n", ctx->ebx);
+    }
+    break;
+
+    // Send message to another processes mailbox
+    // $ah -> Flags (not implemented yet, assume indirect flag is always set for now)
+    // $ebx -> Receiver PID
+    // $cl -> Data Size
+    // $edx -> Data
+    // $edi -> Data (Depends on flag)
+    case 3:
+    {
+        // Copy message
+        u8 message_size = ctx->ecx & 0xFF;
+        char message_cpy[255];
+        for (u8 i = 0; i < message_size; i++) {
+            message_cpy[i] = *((char*)ctx->edx + i);
+        }
+        message_cpy[message_size] = '\0';
+        i32 org_pid = running_pid;
+
+        // Switch address space
+        load_page_dir(processes[ctx->ebx].page_dir_paddr);
+        
+        // Send message to mailbox
+        send_message(MAILBOX_ADDR, org_pid, message_size, message_cpy);
+
+        // Switch back address space
+        load_page_dir(processes[org_pid].page_dir_paddr);
+    }
+    break;
+
+    // Read message from own mailbox
+    // $ebx -> pointer to where the message should be held (ensure 258 bytes are allocated)
+    // $ecx -> status of the read request (0 if no message, 1 if message written)
+    // $ecx is returned, no need to input anything
+    case 4:
+    {
+        ctx->ecx = read_message(MAILBOX_ADDR, (char*)ctx->ebx);
+    }
+    break;
+
+    default:
+    {
         terminal_printf("Unknown syscall :(\n");
+    }
+    break;
     }
 }
 

@@ -60,9 +60,8 @@ void kernel_main(void) {
     kernel_test();
 #endif
 
-    // exec_sun("proca.out");
-    // exec_sun("procb.out");
-    exec_sun("printer.out", 0);
+    // Add your processes here
+    // ex. exec_sun("binary.out", 0)
 
     scheduler_init();
     schedule();
