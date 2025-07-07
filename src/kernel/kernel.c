@@ -60,11 +60,8 @@ void kernel_main(void) {
     kernel_test();
 #endif
 
-    exec_sun("echo.out", 'A');
-    exec_sun("echo.out", 'B');
-    exec_sun("echo.out", 'C');
-    exec_sun("echo.out", 'D');
-    exec_sun("echo.out", 'E');
+    // Add your processes here
+    // ex. exec_sun("binary.out", 0)
 
     scheduler_init();
     schedule();

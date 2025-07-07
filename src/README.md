@@ -12,6 +12,10 @@ Various hardware drivers
 
 Handing interrupt requests and service routines
 
+## ipc
+
+Inter-process communication libraries and functions
+
 ## kernel
 
 Core of the OS
@@ -26,7 +30,11 @@ Handles memory management, allocation, paging, and virtual memory
 
 ## process
 
-Handles process creation, scheduling, execution, and IPC
+Handles process creation, scheduling and execution
+
+## sun
+
+Paradise Sun binary functions
 
 ## terminal
 
