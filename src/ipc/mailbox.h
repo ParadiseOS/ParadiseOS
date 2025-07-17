@@ -1,9 +1,14 @@
+#include "lib/error.h"
 #include "lib/types.h"
+#include "memory/mem.h"
 
 // The mailbox messaging IPC is described in ParadiseDocs
 // Because memory is still being worked on these functions may change drastically
 // All unused functions are marked as current development doesn't support them
 // They are still implemented to showcase what we hope the expected end behavior to be
+
+#define MAILBOX_DATA_SIZE 4076 // 4076 to keep Mailbox page aligned
+#define MAX_MESSAGE_SIZE 255 // max u8 value
 
 typedef struct {
     void* head;
@@ -12,21 +17,21 @@ typedef struct {
     u16 capacity;
     void* next_page;
     void* prev_page;
-    char data[4076];
+    char data[MAILBOX_DATA_SIZE];
 } MailboxHead;
 
 typedef struct {
     char reserved[12];
     void* next_page;
     void* prev_page;
-    char data[4076];
+    char data[MAILBOX_DATA_SIZE];
 } MailboxPage;
 
 typedef struct {
     u16 pid;
     u8 message_size;
-    char data[255];
-} Mailbox_Message;
+    char data[MAX_MESSAGE_SIZE];
+} MailboxMessage;
 
 typedef MailboxHead Mailbox;
 
