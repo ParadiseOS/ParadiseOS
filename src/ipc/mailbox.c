@@ -1,11 +1,10 @@
 #include "ipc/mailbox.h"
-#include "memory/mem.h"
 #include "lib/error.h"
-
-#define PAGE_SIZE 4096
+#include "lib/libp.h"
+#include "memory/mem.h"
 
 void* page_ptr(void* addr) {
-    return (void*)((((u32)addr + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE - PAGE_SIZE);
+    return (void*)((u32)addr / PAGE_SIZE * PAGE_SIZE);
 }
 
 void mailbox_init_temp(Mailbox* mailbox) {
@@ -13,7 +12,7 @@ void mailbox_init_temp(Mailbox* mailbox) {
     mailbox->head = &mailbox->data;
     mailbox->tail = &mailbox->data;
     mailbox->size = 0;
-    mailbox->capacity = (PAGE_SIZE-20);
+    mailbox->capacity = sizeof(mailbox->data);
     mailbox->next_page = mailbox;
     mailbox->prev_page = mailbox;
 }
@@ -23,7 +22,7 @@ Mailbox* mailbox_init() {
     mailbox->head = &mailbox->data;
     mailbox->tail = &mailbox->data;
     mailbox->size = 0;
-    mailbox->capacity = (PAGE_SIZE-20);
+    mailbox->capacity = sizeof(mailbox->data);
     mailbox->next_page = mailbox;
     mailbox->prev_page = mailbox;
     return mailbox;
@@ -40,7 +39,9 @@ void mailbox_free(MailboxHead* mailbox) {
     kernel_free(mailbox);
 }
 
+// No-op for now
 int mailbox_grow(MailboxHead* mailbox) {
+    return 1;
     if (mailbox->capacity >= (PAGE_SIZE-20) * 16)
         return 1; // Mailbox is at max size
 
@@ -52,9 +53,7 @@ int mailbox_grow(MailboxHead* mailbox) {
     if ((page_ptr(mailbox->head) == page_ptr(mailbox->tail)) && (mailbox->tail <= mailbox->head)) {
         u32 head_size_on_page = ((u32)current_mailbox + PAGE_SIZE) - ((u32)mailbox->head);
         void* head_on_new_page = (void*)(((u32)new_mailbox + PAGE_SIZE) - head_size_on_page);
-        for (u32 i = 0; i < head_size_on_page; i++) {
-            ((char*)head_on_new_page)[i] = ((char*)mailbox->head)[i];
-        }
+        pmemcpy(head_on_new_page, mailbox->head, head_size_on_page);
         mailbox->head = head_on_new_page;
     } else { // When tail isn't behind head
         current_mailbox = (Mailbox*)page_ptr(mailbox->tail);
@@ -70,12 +69,12 @@ int mailbox_grow(MailboxHead* mailbox) {
     return 0;
 }
 
-int receive_message(Mailbox* mailbox, Mailbox_Message* message) {
+int receive_message(Mailbox* mailbox, MailboxMessage* message) {
     u16 message_pid = message->pid;
     u8 message_size = message->message_size;
 
     // Resize mailbox if message is too large
-    if (mailbox->size + message_size + 3 > mailbox->capacity) { // See below space on page conditional for explanation of "+3"
+    if (mailbox->size + message_size + 3 > mailbox->capacity) {
         terminal_printf("mailbox size - %i\n", mailbox->size);
         int growth_status = mailbox_grow(mailbox);
         if (growth_status)
@@ -98,18 +97,14 @@ int receive_message(Mailbox* mailbox, Mailbox_Message* message) {
     space_on_page -= 3;
 
     if (space_on_page < message_size) { // If entire message can't fit on page
-        for (u8 i = 0; i < space_on_page; i++) {
-            *((char*)mailbox->tail++) = message->data[i];
-        }
+        pmemcpy(mailbox->tail, message->data, space_on_page);
         mailbox->tail = &((MailboxPage*)current_mailbox->next_page)->data;
         u32 remaining_space = message_size - space_on_page;
-        for (u8 i = 0; i < remaining_space; i++) {
-            *((char*)mailbox->tail++) = message->data[space_on_page + i];
-        }
+        pmemcpy(mailbox->tail, (message+space_on_page)->data, remaining_space);
+        mailbox->tail+=remaining_space;
     } else { // If whole message can fit on page
-        for (u8 i = 0; i < message_size; i++) {
-            *((char*)mailbox->tail++) = message->data[i];
-        }
+        pmemcpy(mailbox->tail, message->data, message_size);
+        mailbox->tail+=message_size;
     }
 
     mailbox->size += message_size + 3;
@@ -117,7 +112,7 @@ int receive_message(Mailbox* mailbox, Mailbox_Message* message) {
 }
 
 int send_message(MailboxHead* mailbox, u16 sender_pid, u8 data_size, const char* data) {
-    Mailbox_Message message;
+    MailboxMessage message;
     message.pid = sender_pid;
     message.message_size = data_size;
     for (int i = 0; i < data_size; i++) {
@@ -151,21 +146,17 @@ bool read_message(MailboxHead* mailbox, char* str) {
     *(str++) = (pid >> 8) & 0xFF;
     *(str++) = message_size;
 
-    space_on_page -=3;
+    space_on_page -= 3;
 
     if (space_on_page < message_size) { // If entire message isn't on page
-        for (u8 i = 0; i < space_on_page; i++) {
-            *(str++) = *((char*)mailbox->head++);
-        }
+        pmemcpy(str, mailbox->head, space_on_page);
         mailbox->head = &((MailboxPage*)current_mailbox->next_page)->data;
         u32 remaining_space = message_size - space_on_page;
-        for (u8 i = 0; i < remaining_space; i++) {
-            *(str++) = *((char*)mailbox->head++);
-        }
+        pmemcpy(str, mailbox->head, remaining_space);
+        mailbox->head+=remaining_space;
     } else { // If entire message is on the same page
-        for (u8 i = 0; i < message_size; i++) {
-            *(str++) = *((char*)mailbox->head++);
-        }
+        pmemcpy(str, mailbox->head, message_size);
+        mailbox->head+=message_size;
     }
 
     mailbox->size -= (message_size + 3);

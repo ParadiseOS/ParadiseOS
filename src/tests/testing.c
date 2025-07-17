@@ -1,10 +1,11 @@
-#include "testing.h"
 #include "boot/multiboot.h"
-#include "memory/mem.h"
-#include "lib/types.h"
-#include "terminal/terminal.h"
-#include "lib/error.h"
 #include "drivers/serial/io.h"
+#include "ipc/mailbox.h"
+#include "lib/error.h"
+#include "lib/types.h"
+#include "memory/mem.h"
+#include "terminal/terminal.h"
+#include "testing.h"
 
 void kernel_test() {
     terminal_printf("\nTesting is enabled!\n");
@@ -70,4 +71,7 @@ void kernel_test() {
             break;
         }
     }
+
+    KERNEL_ASSERT(sizeof(MailboxHead) == sizeof(MailboxPage));
+    KERNEL_ASSERT(sizeof(Mailbox) == PAGE_SIZE);
 }
