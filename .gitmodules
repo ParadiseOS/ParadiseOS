@@ -1,3 +1,6 @@
 [submodule "elf2sun"]
 	path = elf2sun
 	url = https://github.com/ParadiseOS/elf2sun.git
+[submodule "libp"]
+	path = libp
+	url = https://github.com/ParadiseOS/libp.git
