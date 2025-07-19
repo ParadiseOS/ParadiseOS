@@ -1,10 +1,10 @@
 #include "interrupt.h"
+#include "drivers/keyboard/keyboard.h"
 #include "kernel/init.h"
 #include "kernel/kernel.h"
 #include "lib/error.h"
-#include "terminal/terminal.h"
-#include "drivers/keyboard/keyboard.h"
 #include "lib/util.h"
+#include "terminal/terminal.h"
 
 extern u32 cpu_interrupts;
 
@@ -16,30 +16,30 @@ const u32 *cpu_interrupt_table = &cpu_interrupts;
 
 GateDescriptor idt[256];
 
-TablePointer idt_ptr = { sizeof (idt) - 1, idt };
+TablePointer idt_ptr = {sizeof(idt) - 1, idt};
 
-// || handler[31:16] || present || privilege level || zero || gate type || reserved || segment selector || handler[15:0] ||
-// || 63          48 || 47      || 46           45 || 44   || 43     40 || 39    32 || 31            16 || 15          0 ||
 GateDescriptor make_gate_descriptor(u32 handler, u8 type, u8 privilege_level) {
     u64 descriptor = 0;
-    u8 pdpl0 = 0b1000 | ((privilege_level & 0b11) << 1); // present bit, privilege level, and zero bit
+    // present bit, privilege level, and zero bit
+    u8 pdpl0 = 0b1000 | ((privilege_level & 0b11) << 1);
 
-    descriptor |= handler >> 16; descriptor <<= 4;
-    descriptor |= pdpl0;         descriptor <<= 4;
-    descriptor |= type & 0xF;    descriptor <<= 24;
-    descriptor |= 8;             descriptor <<= 16; // select first segment
+    descriptor |= handler >> 16;
+    descriptor <<= 4;
+    descriptor |= pdpl0;
+    descriptor <<= 4;
+    descriptor |= type & 0xF;
+    descriptor <<= 24;
+    descriptor |= 8;
+    descriptor <<= 16; // select first segment
     descriptor |= handler & 0xFFFF;
 
-    return (GateDescriptor) { descriptor };
+    return (GateDescriptor) {descriptor};
 }
 
 /**
  * @brief Function pointers to all 16 external interrupts
  */
-void* irq_routines[16] = {
-    0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0
-};
+void *irq_routines[16] = {0};
 
 /**
  * @brief Enables Programmable Interrupt Controller
@@ -62,9 +62,9 @@ void init_pic() {
     outb(PIC2_DATA, 0x01);
 
     // Mask all interrupts
-    outb(PIC1_DATA,0xff);
-    outb(PIC2_DATA,0xff);
-    asm ("sti"); // Enable interrupts
+    outb(PIC1_DATA, 0xff);
+    outb(PIC2_DATA, 0xff);
+    asm("sti"); // Enable interrupts
 }
 
 /**
@@ -78,7 +78,8 @@ void pic_mask(u8 irq, bool enable) {
 
     if (irq < 8) {
         port = PIC1_DATA;
-    } else {
+    }
+    else {
         port = PIC2_DATA;
         irq -= 8;
     }
@@ -91,7 +92,7 @@ void pic_mask(u8 irq, bool enable) {
 }
 
 /**
- * @brief 
+ * @brief
  * @param irq The external interrupt
  */
 void pic_eoi(u8 irq) {
@@ -104,18 +105,24 @@ void pic_eoi(u8 irq) {
  * @brief Initialize the interrupt descriptor table
  */
 void init_idt() {
-    for(u32 i = 0; i < 256; i++) idt[i] = (GateDescriptor) { 0 };
+    for (u32 i = 0; i < 256; i++)
+        idt[i] = (GateDescriptor) {0};
 
     init_pic();
-    
+
     for (u32 i = 0; i < 32; ++i) {
-        idt[i] = make_gate_descriptor((u32)cpu_interrupt_table[i], idtgt_Trap, dpl_Kernel);
+        idt[i] = make_gate_descriptor(
+            (u32) cpu_interrupt_table[i], idtgt_Trap, dpl_Kernel
+        );
     }
 
-    for (u32 i = 32; i < 48; i++){
-        idt[i] = make_gate_descriptor((u32)cpu_interrupt_table[i], idtgt_Int, dpl_Kernel);
+    for (u32 i = 32; i < 48; i++) {
+        idt[i] = make_gate_descriptor(
+            (u32) cpu_interrupt_table[i], idtgt_Int, dpl_Kernel
+        );
     }
-    idt[0x80] = make_gate_descriptor((u32) syscall_wrapper, idtgt_Int, dpl_User);
+    idt[0x80] =
+        make_gate_descriptor((u32) syscall_wrapper, idtgt_Int, dpl_User);
 
     load_idt(&idt_ptr);
 }
@@ -155,7 +162,7 @@ const char *INTERRUPT_NAMES[32] = {
  * @param irq The external interrupt
  * @param handler Pointer to handler function
  */
-void irq_install_handler(u32 irq, void (*handler)(InterruptRegisters* reg)) {
+void irq_install_handler(u32 irq, void (*handler)(InterruptRegisters *reg)) {
     irq_routines[irq] = handler;
     pic_mask(irq, FALSE);
 }
@@ -173,8 +180,8 @@ void irq_uninstall_handler(u32 irq) {
  * @brief Handles external interrupt with irq routine function
  * @param regs Interrupt registers
  */
-void irq_handler(InterruptRegisters* regs) {
-    void (*handler)(InterruptRegisters* regs);
+void irq_handler(InterruptRegisters *regs) {
+    void (*handler)(InterruptRegisters *);
 
     u8 irq = regs->int_no - 32;
 
@@ -189,7 +196,7 @@ void irq_handler(InterruptRegisters* regs) {
  * @brief Handles software interrupts. Routes to irq if external.
  * @param regs Interrupt registers
  */
-void isr_handler(InterruptRegisters* regs) {
+void isr_handler(InterruptRegisters *regs) {
     u32 interrupt = regs->int_no;
     KERNEL_ASSERT(interrupt < 48);
     if (interrupt >= 32)

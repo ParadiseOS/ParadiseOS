@@ -1,15 +1,15 @@
 #include "mem.h"
-#include "lib/error.h"
 #include "boot/multiboot.h"
 #include "kernel/kernel.h"
+#include "lib/error.h"
 #include "lib/libp.h"
-#include "terminal/terminal.h"
 #include "memory/heap.h"
+#include "terminal/terminal.h"
 
-#define LOWER_MEM_PAGE_COUNT 256
+#define LOWER_MEM_PAGE_COUNT  256
 #define MAX_KERNEL_PAGE_COUNT 0x300 // last 3/4 of page table
-#define KERNEL_PDI_START 0x300 // top 1/4 of memory
-#define KERNEL_PDI_END 0x3FF // all but final self-map of page dir
+#define KERNEL_PDI_START      0x300 // top 1/4 of memory
+#define KERNEL_PDI_END        0x3FF // all but final self-map of page dir
 
 // virtual addresses are represented with pointers
 // physical addresses are represented with integers
@@ -20,14 +20,17 @@ extern void flush_tlb();
 u32 *page_directory_entries = (u32 *) 0xFFFFF000;
 u32 *page_table_entries = (u32 *) 0xFFC00000;
 
+// clang-format off
 #define PDE(pd_index) (page_directory_entries[pd_index])
-#define PTE(pd_index, pt_index) (page_table_entries[(pd_index) * 1024 + (pt_index)])
+#define PTE(pd_index, pt_index)                                                \
+    (page_table_entries[(pd_index) * 1024 + (pt_index)])
+// clang-format on
 
 #define PDE_USER_MODE 4 // Can user access?
 #define PDE_WRITABLE  2 // Can user write?
 
-#define PTE_USER_MODE   4 // Can user access?
-#define PTE_WRITABLE    2 // Can user write?
+#define PTE_USER_MODE 4   // Can user access?
+#define PTE_WRITABLE  2   // Can user write?
 #define PTE_GLOBAL    512 // Flush from TLB on CR3 reload?
 
 u32 kernel_page_dir = 0;
@@ -57,7 +60,7 @@ u16 get_flags(u32 entry) {
 }
 
 u32 *get_page_table(u32 pd_index) {
-   return &PTE(pd_index, 0);
+    return &PTE(pd_index, 0);
 }
 
 bool entry_present(u32 entry) {
@@ -66,7 +69,8 @@ bool entry_present(u32 entry) {
 
 u32 get_entry(void *vaddr) {
     u32 pdi = get_pd_index(vaddr);
-    if (!entry_present(PDE(pdi))) return 0;
+    if (!entry_present(PDE(pdi)))
+        return 0;
     return PTE(pdi, get_pt_index(vaddr));
 }
 
@@ -116,12 +120,16 @@ void map_page(void *vaddr, u32 paddr, u16 flags) {
         // paging structures through the self map of the page directory. Non
         // writeable pages must be set at the PTE level. Since, additionally,
         // PDEs cannot be global, we only care about the user mode flag here.
-        PDE(pdi) = create_entry(new_table, PDE_WRITABLE | (flags & PAGE_USER_MODE));
+        PDE(pdi) =
+            create_entry(new_table, PDE_WRITABLE | (flags & PAGE_USER_MODE));
         init_page_table(get_page_table(pdi));
     }
 
+    bool user_mode_requested = flags & PAGE_USER_MODE;
+    bool pde_user_mode = get_flags(PDE(pdi)) & PAGE_USER_MODE;
+
     // If user mode is requested of the page, it must be present in the PDE.
-    KERNEL_ASSERT(!(flags & PAGE_USER_MODE) || (get_flags(PDE(pdi)) & PAGE_USER_MODE));
+    KERNEL_ASSERT(!user_mode_requested || pde_user_mode);
     KERNEL_ASSERT(!entry_present(PTE(pdi, pti)));
 
     PTE(pdi, pti) = create_entry(paddr, flags);
@@ -227,7 +235,7 @@ void reinit_paging() {
     // be mapped using only one page table. This assumption should be enforced
     // in the boot code.
 
-    u32 kernel_page_count = size_in_pages(kernel_end_paddr - kernel_start_paddr);
+    u32 page_count = size_in_pages(kernel_end_paddr - kernel_start_paddr);
     u32 kernel_offset = (u32) kernel_start_vaddr - kernel_start_paddr;
 
     // Two addresses which are guaranteed to allocate two new page tables and
@@ -235,10 +243,10 @@ void reinit_paging() {
     void *id_map_vaddr = (void *) (kernel_offset - (1 << 24));
     void *kernel_map_vaddr = (void *) (kernel_start_vaddr - (2 << 24));
 
-    KERNEL_ASSERT(kernel_page_count <= MAX_KERNEL_PAGE_COUNT);
+    KERNEL_ASSERT(page_count <= MAX_KERNEL_PAGE_COUNT);
 
     map_pages(id_map_vaddr, 0, PAGE_WRITABLE, LOWER_MEM_PAGE_COUNT);
-    map_pages(kernel_map_vaddr, kernel_start_paddr, PAGE_WRITABLE, kernel_page_count);
+    map_pages(kernel_map_vaddr, kernel_start_paddr, PAGE_WRITABLE, page_count);
 
     u32 old_free_list_entry = *free_list_head_pte;
 
@@ -247,8 +255,10 @@ void reinit_paging() {
     u32 kernel_map_index_src = get_pd_index(kernel_map_vaddr);
     u32 kernel_map_index_dst = get_pd_index((void *) kernel_start_vaddr);
 
-    PDE(id_map_index_dst) = create_entry(get_paddr(PDE(id_map_index_src)), PDE_WRITABLE);
-    PDE(kernel_map_index_dst) = create_entry(get_paddr(PDE(kernel_map_index_src)), PDE_WRITABLE);
+    PDE(id_map_index_dst) =
+        create_entry(get_paddr(PDE(id_map_index_src)), PDE_WRITABLE);
+    PDE(kernel_map_index_dst) =
+        create_entry(get_paddr(PDE(kernel_map_index_src)), PDE_WRITABLE);
 
     PDE(id_map_index_src) = 0;
     PDE(kernel_map_index_src) = 0;
@@ -277,12 +287,22 @@ void init_frames() {
 
     KERNEL_ASSERT(multiboot_info->flags & MB_FLAG_MMAP);
 
-    for (u32 i = 0; i < multiboot_info->mmap_length / sizeof (MMapEntry); i++) {
-        if (entries[i].type == MMAP_AVAILABLE && entries[i].base_addr_lo >= (u32) kernel_start_paddr) {
+    for (u32 i = 0; i < multiboot_info->mmap_length / sizeof(*entries); i++) {
+        bool mem_available =
+            entries[i].type == MMAP_AVAILABLE &&
+            entries[i].base_addr_lo >= (u32) kernel_start_paddr;
+
+        if (mem_available) {
             if (entries[i].base_addr_lo == (u32) kernel_start_paddr)
-                init_frame_region((u32) kernel_end_paddr, entries[i].base_addr_lo + entries[i].length_lo);
+                init_frame_region(
+                    (u32) kernel_end_paddr,
+                    entries[i].base_addr_lo + entries[i].length_lo
+                );
             else
-                init_frame_region(entries[i].base_addr_lo, entries[i].base_addr_lo + entries[i].length_lo);
+                init_frame_region(
+                    entries[i].base_addr_lo,
+                    entries[i].base_addr_lo + entries[i].length_lo
+                );
         }
     }
 }
@@ -298,13 +318,13 @@ void init_heap() {
 
 // Performs all operations required to initialize our kernel memory management.
 void mem_init() {
-    asm ("cli"); // Probably don't want interrupts while doing this
+    asm("cli"); // Probably don't want interrupts while doing this
     kernel_page_dir = get_page_dir_paddr();
     init_free_list_page();
     init_frames();
     reinit_paging();
     init_heap();
-    asm ("sti");
+    asm("sti");
 }
 
 // Allocates a given number of pages on the heap. Empty allocations are not
@@ -332,10 +352,12 @@ void *mem_realloc(Heap *heap, void *ptr, u32 pages) {
     }
     else {
         if (old_size > pages) {
-            free_pages(ptr + pages * PAGE_SIZE, old_size - pages);
+            void *new_alloc_end = ptr + pages * PAGE_SIZE;
+            free_pages(new_alloc_end, old_size - pages);
         }
         else {
-            alloc_pages(ptr + old_size * PAGE_SIZE, PAGE_WRITABLE, pages - old_size);
+            void *old_alloc_end = ptr + old_size * PAGE_SIZE;
+            alloc_pages(old_alloc_end, PAGE_WRITABLE, pages - old_size);
         }
     }
 
@@ -367,8 +389,11 @@ void kernel_free(void *ptr) {
 // thus should only be used for debugging purposes. We also print a
 // representation of the usage of the first `pages` pages of the heap.
 void debug_heap(u32 pages) {
-    for (void *addr = kernel_heap.heap_start; addr < (void *) page_table_entries; addr += PAGE_SIZE) {
-        KERNEL_ASSERT(heap_is_used(&kernel_heap, addr) == entry_present(get_entry(addr)));
+    void *end = (void *) page_table_entries;
+    for (void *addr = kernel_heap.heap_start; addr < end; addr += PAGE_SIZE) {
+        KERNEL_ASSERT(
+            heap_is_used(&kernel_heap, addr) == entry_present(get_entry(addr))
+        );
     }
 
     heap_debug(&kernel_heap, pages);
