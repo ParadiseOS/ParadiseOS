@@ -37,12 +37,14 @@ void terminal_init(usize width, usize height, u16 *buffer) {
 void terminal_scroll(void) {
     for (usize r = 1; r < terminal.height; ++r) {
         for (usize c = 0; c < terminal.width; ++c) {
-            terminal.buffer[(r - 1) * terminal.width + c] = terminal.buffer[r * terminal.width + c];
+            terminal.buffer[(r - 1) * terminal.width + c] =
+                terminal.buffer[r * terminal.width + c];
         }
     }
 
     for (usize c = 0; c < terminal.width; ++c) {
-        terminal.buffer[(terminal.height - 1) * terminal.width + c] = vga_entry_create(' ', terminal.color);
+        terminal.buffer[(terminal.height - 1) * terminal.width + c] =
+            vga_entry_create(' ', terminal.color);
     }
 
     update_cursor();
@@ -191,7 +193,7 @@ void terminal_printf(const char *fmt, ...) {
     for (; *fmt; ++fmt) {
         char c = *fmt;
 
-        if (c == '%')  {
+        if (c == '%') {
             ++fmt;
 
             switch (*fmt) {

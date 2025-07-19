@@ -12,6 +12,7 @@ typedef struct {
     u16 *buffer;
 } Terminal;
 
+// clang-format off
 typedef enum {
     VGA_COLOR_BLACK         = 0,
     VGA_COLOR_BLUE          = 1,
@@ -30,6 +31,7 @@ typedef enum {
     VGA_COLOR_LIGHT_BROWN   = 14,
     VGA_COLOR_WHITE         = 15,
 } VgaColor;
+// clang-format on
 
 extern Terminal terminal;
 

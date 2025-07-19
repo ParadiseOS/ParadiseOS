@@ -1,14 +1,14 @@
 #ifndef MEM_H_
 #define MEM_H_
 
-#include "lib/types.h"
 #include "boot/multiboot.h"
 #include "heap.h"
+#include "lib/types.h"
 
 #define PAGE_SIZE 4096
 
-#define PAGE_USER_MODE   4 // Can user access?
-#define PAGE_WRITABLE    2 // Can user write?
+#define PAGE_USER_MODE 4   // Can user access?
+#define PAGE_WRITABLE  2   // Can user write?
 #define PAGE_GLOBAL    512 // Flush from TLB on CR3 reload?
 
 extern u32 kernel_page_dir;

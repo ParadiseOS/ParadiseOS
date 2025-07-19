@@ -11,7 +11,7 @@ typedef struct {
 extern SunFile sun_file;
 
 static char MAGIC[] = "SUN";
-static u32 MAGIC_LEN = sizeof (MAGIC) - 1;
+static u32 MAGIC_LEN = sizeof(MAGIC) - 1;
 
 void sun_init() {
     KERNEL_ASSERT(pmemeql(sun_file.magic, MAGIC, MAGIC_LEN));
