@@ -3,7 +3,7 @@
 **Building the cross compiler**
 
 ``` sh
-docker build paradise-os .
+docker build -t paradise-os .
 ```
 
 **Building the OS**
@@ -15,6 +15,8 @@ docker build paradise-os .
 To build with tests enabled add flag `--tests` or `-t`
 
 To build elf2sun programs before paradise add flag `--build_programs` or `-b`
+
+To build libp for use with programs add flag `--libp` or `-l`
 
 **Running the OS**
 

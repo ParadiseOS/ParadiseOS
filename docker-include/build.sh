@@ -12,6 +12,17 @@ else
     TESTS_FLAG=""
 fi
 
+if [ "$LIBP" = true ]; then
+    printf -- "---------------------------------------\n"
+    printf -- "------------ BUILDING LIBP ------------\n"
+    printf -- "---------------------------------------\n"
+    cd libp
+    ./build_libp.sh
+    cd ..
+    mv ./libp/build/libp.o ./elf2sun/programs
+    printf "\n"
+fi
+
 if [ "$BUILD_PROGRAMS" = true ]; then
     printf -- "---------------------------------------\n"
     printf -- "---------- BUILDING PROGRAMS ----------\n"

@@ -47,5 +47,6 @@ RUN mkdir -p paradise-os/boot/grub
 
 ARG TESTS_ENABLED
 ARG BUILD_PROGRAMS
+ARG LIBP
 
 CMD ["sh", "scripts/build.sh"]
