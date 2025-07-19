@@ -13,7 +13,7 @@ typedef struct {
     u32 bss_size;
 } TableEntry;
 
-_Static_assert(sizeof (TableEntry) == 40, "Table entry size mismatch");
+_Static_assert(sizeof(TableEntry) == 40, "Table entry size mismatch");
 
 void sun_init();
 TableEntry *sun_exe_lookup(const char *name);

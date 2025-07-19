@@ -1,7 +1,8 @@
 #ifndef MULTIBOOT_H_
 #define MULTIBOOT_H_
 
-// See https://www.gnu.org/software/grub/manual/multiboot/multiboot.html#Boot-information-format
+// See
+// https://www.gnu.org/software/grub/manual/multiboot/multiboot.html
 
 #include "lib/types.h"
 

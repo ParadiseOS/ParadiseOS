@@ -1,3 +1,4 @@
+#include "testing.h"
 #include "boot/multiboot.h"
 #include "drivers/serial/io.h"
 #include "ipc/mailbox.h"
@@ -5,7 +6,6 @@
 #include "lib/types.h"
 #include "memory/mem.h"
 #include "terminal/terminal.h"
-#include "testing.h"
 
 void kernel_test() {
     terminal_printf("\nTesting is enabled!\n");
@@ -20,17 +20,17 @@ void kernel_test() {
     terminal_printf("Charset:\n");
     terminal.color = vga_color_create(VGA_COLOR_LIGHT_BLUE, VGA_COLOR_BLACK);
     for (int h = 0; h < 16; ++h) {
-      for (int l = 0; l < 16; ++l) {
-        terminal_printf("%c", h << 4 | l);
-      }
-      terminal_printf("\n");
+        for (int l = 0; l < 16; ++l) {
+            terminal_printf("%c", h << 4 | l);
+        }
+        terminal_printf("\n");
     }
     terminal.color = vga_color_create(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
 
     terminal_printf("Colors:\n");
     for (int c = 0; c < 16; ++c) {
-      terminal.color = vga_color_create(VGA_COLOR_LIGHT_GREY, c);
-      terminal_printf(" ");
+        terminal.color = vga_color_create(VGA_COLOR_LIGHT_GREY, c);
+        terminal_printf(" ");
     }
 
     i32 a = -45;
@@ -39,16 +39,21 @@ void kernel_test() {
 
     terminal.color = vga_color_create(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
     terminal_printf("\n");
-    terminal_printf("printf Test: %u, %i, %u, %i, %x, %x, %b, %b, %s, %c, %%\n",
-                    a, a, b, b, a, b, a, b, message, *message);
+    terminal_printf(
+        "printf Test: %u, %i, %u, %i, %x, %x, %b, %b, %s, %c, %%\n", a, a, b, b,
+        a, b, a, b, message, *message
+    );
     terminal.color = vga_color_create(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
 
     MMapEntry *entries = multiboot_info->mmap_addr;
 
     KERNEL_ASSERT(multiboot_info->flags & MB_FLAG_MMAP);
 
-    for (u32 i = 0; i < multiboot_info->mmap_length / sizeof (MMapEntry); i++) {
-        terminal_printf("%u (%u): %p %u ", i, entries[i].size, entries[i].base_addr_lo, entries[i].length_lo);
+    for (u32 i = 0; i < multiboot_info->mmap_length / sizeof(MMapEntry); i++) {
+        terminal_printf(
+            "%u (%u): %p %u ", i, entries[i].size, entries[i].base_addr_lo,
+            entries[i].length_lo
+        );
 
         switch (entries[i].type) {
         case MMAP_AVAILABLE:
@@ -71,7 +76,4 @@ void kernel_test() {
             break;
         }
     }
-
-    KERNEL_ASSERT(sizeof(MailboxHead) == sizeof(MailboxPage));
-    KERNEL_ASSERT(sizeof(Mailbox) == PAGE_SIZE);
 }

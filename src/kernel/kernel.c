@@ -1,16 +1,16 @@
 #include "kernel.h"
-#include "sun/sun.h"
-#include "terminal/terminal.h"
 #include "boot/multiboot.h"
+#include "drivers/keyboard/keyboard.h"
+#include "drivers/serial/io.h"
+#include "drivers/timer/timer.h"
 #include "init.h"
 #include "interrupts/interrupt.h"
 #include "lib/error.h"
 #include "memory/mem.h"
 #include "process/processes.h"
+#include "sun/sun.h"
+#include "terminal/terminal.h"
 #include "tests/testing.h"
-#include "drivers/timer/timer.h"
-#include "drivers/keyboard/keyboard.h"
-#include "drivers/serial/io.h"
 
 const u32 kernel_start_paddr = (u32) &_kernel_start_paddr;
 const void *kernel_start_vaddr = &_kernel_start_vaddr;
@@ -25,8 +25,7 @@ void kernel_main(void) {
     }
 
     terminal_init(
-        multiboot_info->framebuffer_width,
-        multiboot_info->framebuffer_height,
+        multiboot_info->framebuffer_width, multiboot_info->framebuffer_height,
         (u16 *) multiboot_info->framebuffer_addr_lo
     );
 
@@ -67,6 +66,6 @@ void kernel_main(void) {
     schedule();
 
     for (;;) {
-        asm ("hlt");
+        asm("hlt");
     }
 }

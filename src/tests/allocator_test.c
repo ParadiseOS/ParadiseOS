@@ -52,7 +52,8 @@ Allocation *free_i(Allocation *head, u32 i) {
 
 void realloc_i(Allocation *head, u32 pages, u32 i) {
     Allocation *a = head;
-    while (i--) a = a->next;
+    while (i--)
+        a = a->next;
 
     allocated += pages;
     allocated -= a->size;
@@ -91,7 +92,9 @@ void test_allocator() {
             --count;
         }
         else if (choice <= 2) {
-            realloc_i(head, (prng_next(&rng) & 0xFF) + 1, prng_next(&rng) % count);
+            realloc_i(
+                head, (prng_next(&rng) & 0xFF) + 1, prng_next(&rng) % count
+            );
         }
         else {
             head = allocate(head, (prng_next(&rng) & 0xFF) + 1);

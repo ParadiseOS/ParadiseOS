@@ -65,7 +65,7 @@ typedef struct {
     Heap heap;
 } ProcessControlBlock;
 
-_Static_assert(sizeof (ProcessControlBlock) <= PAGE_SIZE, "PCB too large");
+_Static_assert(sizeof(ProcessControlBlock) <= PAGE_SIZE, "PCB too large");
 
 typedef struct {
     u32 edi, esi, ebp, esp, ebx, edx, ecx, eax;
@@ -74,8 +74,7 @@ typedef struct {
 
 void exec_sun(const char *name, int arg);
 
-__attribute__((noreturn))
-void schedule();
+__attribute__((noreturn)) void schedule();
 
 void scheduler_init();
 

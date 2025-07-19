@@ -1,9 +1,9 @@
 #include "heap.h"
 #include "drivers/serial/io.h"
-#include "lib/types.h"
-#include "memory/mem.h"
 #include "lib/error.h"
 #include "lib/libp.h"
+#include "lib/types.h"
+#include "memory/mem.h"
 #include "terminal/terminal.h"
 
 #define HEAP_PAGE_FREE       0
@@ -30,7 +30,7 @@ void heap_set_usage(Heap *heap, u32 index, u8 usage) {
     u32 bit_pair_idx = 6 - 2 * (index % 4);
 
     heap->usage_map[byte_idx] =
-        (heap->usage_map[byte_idx] & ~((u8)0b11 << bit_pair_idx)) |
+        (heap->usage_map[byte_idx] & ~((u8) 0b11 << bit_pair_idx)) |
         (usage << bit_pair_idx);
 }
 
@@ -53,11 +53,12 @@ u8 get_new_color(u8 left, u8 right) {
     u8 color = left;
     for (u8 i = 0; i < 3; ++i) {
         color += 1;
-        if (color > 3) color = 1;
+        if (color > 3)
+            color = 1;
         if (color != left && color != right)
             return color;
     }
-    KERNEL_ASSERT(FALSE);
+    KERNEL_ASSERT(FALSE); // unreachable
 }
 
 // Marks a region of the heap as used. `start` should be the page index starting
@@ -92,7 +93,7 @@ void heap_init(Heap *heap, void *heap_start, u32 page_count) {
     pmemset(heap_start, HEAP_PAGE_FREE, byte_size);
 
     heap->usage_map = heap_start;
-    heap->heap_start = heap_start + page_size * PAGE_SIZE; // account for usage map
+    heap->heap_start = heap_start + page_size * PAGE_SIZE; // include usage map
     heap->page_count = page_count;
 }
 
@@ -124,12 +125,13 @@ void *heap_alloc(Heap *heap, u32 pages) {
     // pointer, since running out of memory is not a fatal error. We can
     // mitigate this case with a better page allocation algorithm.
 
-    KERNEL_ASSERT(FALSE); // Out of memory
+    KERNEL_ASSERT(FALSE); // No suitable allocation space
 }
 
 // Reallocates some memory. Returns the size of the old allocation.
 u32 heap_realloc(Heap *heap, void *ptr, void **new_ptr, u32 pages) {
-    KERNEL_ASSERT(is_page_aligned(ptr)); // We only give out page-aligned pointers
+    // We only give out page-aligned pointers
+    KERNEL_ASSERT(is_page_aligned(ptr));
 
     u32 start = (ptr - heap->heap_start) / PAGE_SIZE;
     u32 color = heap_get_usage(heap, start);
@@ -138,7 +140,8 @@ u32 heap_realloc(Heap *heap, void *ptr, void **new_ptr, u32 pages) {
 
     KERNEL_ASSERT(color != HEAP_PAGE_FREE);
 
-    while (heap_get_usage(heap, end) == color) end += 1;
+    while (heap_get_usage(heap, end) == color)
+        end += 1;
 
     if (realloc_end <= end) { // downsizing?
         for (u32 i = realloc_end; i < end; ++i)
@@ -161,14 +164,16 @@ u32 heap_realloc(Heap *heap, void *ptr, void **new_ptr, u32 pages) {
 
         *new_ptr = ptr;
         return end - start;
-    } else {
+    }
+    else {
         *new_ptr = heap_alloc(heap, pages);
         return heap_free(heap, ptr);
     }
 }
 
 u32 heap_free(Heap *heap, void *ptr) {
-    KERNEL_ASSERT(is_page_aligned(ptr)); // We only give out page-aligned pointers
+    // We only give out page-aligned pointers
+    KERNEL_ASSERT(is_page_aligned(ptr));
 
     u32 start = (ptr - heap->heap_start) / PAGE_SIZE;
     u32 color = heap_get_usage(heap, start);
@@ -191,7 +196,13 @@ void heap_debug(Heap *heap, u32 pages) {
     if (pages > heap->page_count)
         pages = heap->page_count;
 
-    const VgaColor colors[4] = { VGA_COLOR_WHITE, VGA_COLOR_RED, VGA_COLOR_GREEN, VGA_COLOR_BLUE };
+    const VgaColor colors[4] = {
+        VGA_COLOR_WHITE,
+        VGA_COLOR_RED,
+        VGA_COLOR_GREEN,
+        VGA_COLOR_BLUE,
+    };
+
     const char *chars = ".RGB";
 
     for (u32 i = 0; i < pages; ++i) {
