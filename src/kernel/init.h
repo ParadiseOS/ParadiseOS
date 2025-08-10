@@ -156,6 +156,7 @@ typedef struct __attribute__((aligned(8))) {
 void init_gdt();
 void init_tss();
 
+extern void init_fpu();
 extern u8 get_privilege_level();
 
 #endif

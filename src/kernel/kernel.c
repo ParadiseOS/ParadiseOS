@@ -42,6 +42,9 @@ void kernel_main(void) {
     terminal_printf("Initializing TSS...\n");
     init_tss();
 
+    terminal_printf("Initializing FPU...\n");
+    init_fpu();
+
     terminal_printf("Initializing memory...\n");
     mem_init();
 
