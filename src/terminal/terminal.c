@@ -185,6 +185,41 @@ void terminal_print_int(u32 n, bool is_signed) {
     }
 }
 
+void terminal_print_float(f64 n, u32 precision) {
+    if (n < 0) {
+        terminal_putchar('-');
+        n = -n;
+    }
+
+    u32 integer = (u32) n;
+    terminal_print_int(integer, FALSE);
+
+    if (precision == 0)
+        return;
+
+    terminal_putchar('.');
+
+    f64 fraction_float = n - (f64) integer;
+
+    f64 multiplier = 1.0;
+    for (u32 i = 0; i < precision; i++)
+        multiplier *= 10.0;
+
+    u32 fraction_int = (u32) (fraction_float * multiplier + 0.5);
+    // 0.5 for rounding
+
+    char buffer[precision + 1];
+    i8 i = 0;
+    for (u32 j = 0; j < precision; j++) {
+        buffer[i++] = (fraction_int % 10) + '0';
+        fraction_int /= 10;
+    }
+
+    for (i = i - 1; i >= 0; i--) {
+        terminal_putchar(buffer[i]);
+    }
+}
+
 // TODO: implement printing of 64 bit integers
 void terminal_printf(const char *fmt, ...) {
     va_list args;
@@ -202,6 +237,9 @@ void terminal_printf(const char *fmt, ...) {
                 break;
             case 'i':
                 terminal_print_int(va_arg(args, u32), true);
+                break;
+            case 'f':
+                terminal_print_float(va_arg(args, f64), 6);
                 break;
             case 'p':
                 terminal_print_ptr(va_arg(args, void *));
@@ -221,6 +259,20 @@ void terminal_printf(const char *fmt, ...) {
             case '%':
                 terminal_putchar('%');
                 break;
+            case '.': {
+                u32 precision = 0;
+                while (*(fmt + 1) >= '0' && *(fmt + 1) <= '9') {
+                    fmt++;
+                    precision = precision * 10 + (*fmt - '0');
+                }
+
+                // Check for the 'f' specifier
+                if (*(fmt + 1) == 'f') {
+                    fmt++;
+                    terminal_print_float(va_arg(args, f64), precision);
+                    break; // break out of the main switch
+                }
+            }
             default:
                 break;
             }

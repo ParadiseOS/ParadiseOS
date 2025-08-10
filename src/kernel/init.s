@@ -2,6 +2,12 @@ format ELF
 
 section ".text" executable
 
+public init_fpu
+init_fpu:
+    fninit
+    emms
+    ret
+
 public load_gdt
 load_gdt:
     mov eax, [esp+0x4]
