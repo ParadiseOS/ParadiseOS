@@ -4,6 +4,8 @@
 #include "lib/types.h"
 #include "memory/heap.h"
 #include "memory/mem.h"
+#include "rb_tree.h"
+#include "queue.h"
 
 #define TSS_SIZE 104
 
@@ -50,7 +52,19 @@ typedef struct __attribute__((packed, aligned(PAGE_SIZE))) {
 
 typedef struct {
     u32 page_dir_paddr;
+
+    QueueNode queue_node;
+    RbNode rb_node;
+    bool running;
 } Process;
+
+// The below macros work because node data is stored in the process struct at a
+// known offset.
+
+// Determine the process corresponding to a given red-black tree node
+#define RB_NODE_PROCESS(node) ((Process *) ((u8 *) (node) - offsetof(Process, rb_node)))
+// Determine the process corresponding to a given queue node
+#define QUEUE_NODE_PROCESS(node) ((Process *) ((u8 *) (node) - offsetof(Process, queue_node)))
 
 // NOTE: we assume the offsets of members up to eflags in the assembly so things
 // will break if thats changed

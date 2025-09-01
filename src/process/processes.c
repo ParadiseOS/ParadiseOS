@@ -19,6 +19,9 @@
 
 #define INIT_EFLAGS 0b1000000010
 
+RbTree process_tree;
+Queue run_queue;
+
 Process processes[MAX_PROCS] = {0};
 i32 running_pid = -1;
 u32 process_count = 0;
@@ -191,4 +194,6 @@ void preempt(InterruptRegisters *regs) {
 
 void scheduler_init() {
     timer_callback = preempt;
+    rb_init(&process_tree);
+    queue_init(&run_queue);
 }

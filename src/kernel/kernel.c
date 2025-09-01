@@ -31,6 +31,8 @@ void kernel_main(void) {
 
     KERNEL_ASSERT(multiboot_info->framebuffer_addr_hi == 0);
 
+    terminal_printf("Kernel Size: %u KB\n", (kernel_end_paddr - kernel_start_paddr) / 1024);
+
     terminal_printf("Initializing GDT...\n");
     init_gdt();
 
