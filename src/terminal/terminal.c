@@ -159,11 +159,11 @@ void terminal_print_int(u32 n, bool is_signed) {
     char buffer[12];
     i8 i = 0;
 
-    bool is_negative = FALSE;
+    bool is_negative = false;
 
     if (is_signed && (i32) n < 0) {
         n = -n;
-        is_negative = TRUE;
+        is_negative = true;
     }
 
     if (!n) {
@@ -198,10 +198,10 @@ void terminal_printf(const char *fmt, ...) {
 
             switch (*fmt) {
             case 'u':
-                terminal_print_int(va_arg(args, u32), FALSE);
+                terminal_print_int(va_arg(args, u32), false);
                 break;
             case 'i':
-                terminal_print_int(va_arg(args, u32), TRUE);
+                terminal_print_int(va_arg(args, u32), true);
                 break;
             case 'p':
                 terminal_print_ptr(va_arg(args, void *));

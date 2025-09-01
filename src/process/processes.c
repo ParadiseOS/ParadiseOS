@@ -35,7 +35,7 @@ u16 next_pid() {
             return i;
     }
 
-    KERNEL_ASSERT(FALSE);
+    KERNEL_ASSERT(false);
 }
 
 #define RO_FLAGS PAGE_USER_MODE

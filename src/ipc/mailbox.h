@@ -46,6 +46,6 @@ void mailbox_init_temp(Mailbox *mailbox);
 int send_message(Mailbox *mailbox, u16 sender_pid, u8 size, const char *data);
 
 /** Reads a message from a mailbox into str[258]
- *  Returns True if a message was read, otherwise FALSE
+ *  Returns true if a message was read, otherwise false
  */
 bool read_message(MailboxHead *mailbox, char *str);

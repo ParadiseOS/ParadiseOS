@@ -124,7 +124,7 @@ bool rb_insert(RbTree *tree, RbNode *node, u16 key) {
 
     while (!NIL(loc)) {
         if (loc->key == key)
-            return FALSE;
+            return false;
         dir = key > loc->key;
         parent = loc;
         loc = loc->child[dir];
@@ -143,7 +143,7 @@ bool rb_insert(RbTree *tree, RbNode *node, u16 key) {
 
     tree->count += 1;
     insert_fix(tree, node);
-    return TRUE;
+    return true;
 }
 
 RbNode *rb_remove(RbTree *tree, u16 key) {
