@@ -2,9 +2,13 @@
 #include "boot/multiboot.h"
 #include "drivers/serial/io.h"
 #include "ipc/mailbox.h"
+#include "kernel/kernel.h"
 #include "lib/error.h"
+#include "lib/libp.h"
 #include "lib/types.h"
 #include "memory/mem.h"
+#include "process/queue.h"
+#include "process/rb_tree.h"
 #include "terminal/terminal.h"
 
 void kernel_test() {
