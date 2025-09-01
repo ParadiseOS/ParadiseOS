@@ -132,7 +132,7 @@ int send_message(Mailbox *mailbox, u16 sender_pid, u8 size, const char *data) {
 
 bool read_message(MailboxHead *mailbox, char *str) {
     if (mailbox->size == 0) {
-        return FALSE; // Empty mailbox
+        return false; // Empty mailbox
     }
 
     Mailbox *current_mailbox = (Mailbox *) page_ptr(mailbox->head);
@@ -170,5 +170,5 @@ bool read_message(MailboxHead *mailbox, char *str) {
     }
 
     mailbox->size -= (message_size + 3);
-    return TRUE;
+    return true;
 }

@@ -104,21 +104,21 @@ void keyboardHandler(InterruptRegisters *regs) {
         break;
     case 0x2A: // LSHFT
         if (press == 0)
-            capsOn = TRUE;
+            capsOn = true;
         else
-            capsOn = FALSE;
+            capsOn = false;
         break;
     case 0x36: // RSHFT
         if (press == 0)
-            capsOn = TRUE;
+            capsOn = true;
         else
-            capsOn = FALSE;
+            capsOn = false;
         break;
     case 0x3A: // CAPS
         if (!capsLock && press == 0)
-            capsLock = TRUE;
+            capsLock = true;
         else if (capsLock && press == 0)
-            capsLock = FALSE;
+            capsLock = false;
         break;
     default:
         if (press == 0) {
@@ -131,7 +131,7 @@ void keyboardHandler(InterruptRegisters *regs) {
 }
 
 void init_keyboard() {
-    capsOn = FALSE;
-    capsLock = FALSE;
+    capsOn = false;
+    capsLock = false;
     irq_install_handler(1, &keyboardHandler);
 }

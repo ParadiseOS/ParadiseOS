@@ -164,7 +164,7 @@ const char *INTERRUPT_NAMES[32] = {
  */
 void irq_install_handler(u32 irq, void (*handler)(InterruptRegisters *reg)) {
     irq_routines[irq] = handler;
-    pic_mask(irq, FALSE);
+    pic_mask(irq, false);
 }
 
 /**
@@ -172,7 +172,7 @@ void irq_install_handler(u32 irq, void (*handler)(InterruptRegisters *reg)) {
  * @param irq The external interrupt
  */
 void irq_uninstall_handler(u32 irq) {
-    pic_mask(irq, TRUE);
+    pic_mask(irq, true);
     irq_routines[irq] = 0;
 }
 

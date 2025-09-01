@@ -15,7 +15,7 @@
             );                                                                 \
             kernel_panic();                                                    \
         }                                                                      \
-    } while (FALSE)
+    } while (false)
 
 extern __attribute__((noreturn)) void panic_handler();
 

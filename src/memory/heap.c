@@ -40,10 +40,10 @@ void heap_set_usage(Heap *heap, u32 index, u8 usage) {
 bool heap_is_space_free(Heap *heap, u32 start, u32 space) {
     for (unsigned i = start; space--; ++i) {
         if (heap_get_usage(heap, i) != HEAP_PAGE_FREE)
-            return FALSE;
+            return false;
     }
 
-    return TRUE;
+    return true;
 }
 
 // Returns a valid USED state color based on the states of the pages bordering
@@ -58,7 +58,7 @@ u8 get_new_color(u8 left, u8 right) {
         if (color != left && color != right)
             return color;
     }
-    KERNEL_ASSERT(FALSE); // unreachable
+    KERNEL_ASSERT(false); // unreachable
 }
 
 // Marks a region of the heap as used. `start` should be the page index starting
@@ -125,7 +125,7 @@ void *heap_alloc(Heap *heap, u32 pages) {
     // pointer, since running out of memory is not a fatal error. We can
     // mitigate this case with a better page allocation algorithm.
 
-    KERNEL_ASSERT(FALSE); // No suitable allocation space
+    KERNEL_ASSERT(false); // No suitable allocation space
 }
 
 // Reallocates some memory. Returns the size of the old allocation.

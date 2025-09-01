@@ -25,10 +25,10 @@ bool pmemeql(const void *a, const void *b, u32 count) {
 
     while (count--) {
         if (*a_bytes++ != *b_bytes++)
-            return FALSE;
+            return false;
     }
 
-    return TRUE;
+    return true;
 }
 
 bool pstreql(const void *a, const void *b) {
@@ -41,10 +41,10 @@ bool pstreql(const void *a, const void *b) {
         a_byte = *a_bytes++;
         b_byte = *b_bytes++;
         if (a_byte != b_byte)
-            return FALSE;
+            return false;
     } while (a_byte);
 
-    return TRUE;
+    return true;
 }
 
 void prng_init(Prng *rng, u64 seed) {
