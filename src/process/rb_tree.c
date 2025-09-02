@@ -4,7 +4,7 @@
 #include "lib/types.h"
 #include "terminal/terminal.h"
 
-// See https://en.wikipedia.org/wiki/Red-black_tree
+// See https://dl.ebooksworld.ir/books/Introduction.to.Algorithms.4th.Leiserson.Stein.Rivest.Cormen.MIT.Press.9780262046305.EBooksWorld.ir.pdf
 
 #define RED   0
 #define BLACK 1
