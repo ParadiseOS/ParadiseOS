@@ -53,18 +53,13 @@ typedef struct __attribute__((packed, aligned(PAGE_SIZE))) {
 typedef struct {
     u32 page_dir_paddr;
 
+    // Since these nodes are stored at a known offset in Process, we can always
+    // determine the process corresponding to a given node.
     QueueNode queue_node;
     RbNode rb_node;
-    bool running;
+
+    bool blocked;
 } Process;
-
-// The below macros work because node data is stored in the process struct at a
-// known offset.
-
-// Determine the process corresponding to a given red-black tree node
-#define RB_NODE_PROCESS(node) ((Process *) ((u8 *) (node) - offsetof(Process, rb_node)))
-// Determine the process corresponding to a given queue node
-#define QUEUE_NODE_PROCESS(node) ((Process *) ((u8 *) (node) - offsetof(Process, queue_node)))
 
 // NOTE: we assume the offsets of members up to eflags in the assembly so things
 // will break if thats changed
@@ -90,6 +85,6 @@ void exec_sun(const char *name, int arg);
 
 __attribute__((noreturn)) void schedule();
 
-void scheduler_init();
+void processes_init();
 
 #endif
