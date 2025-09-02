@@ -1,3 +1,4 @@
+#include "process/queue.h"
 #include "processes.h"
 #include "drivers/timer/timer.h"
 #include "interrupts/interrupt.h"
@@ -7,10 +8,11 @@
 #include "lib/libp.h"
 #include "memory/heap.h"
 #include "memory/mem.h"
+#include "process/pool.h"
+#include "process/rb_tree.h"
 #include "sun/sun.h"
 #include "terminal/terminal.h"
 
-#define MAX_PROCS    0x10000
 #define STACK_SIZE   (4 * PAGE_SIZE)
 #define STACK_TOP    ((void *) 0xbfc00000)
 #define PROCESS_ORG  ((void *) 0x402000)
@@ -19,23 +21,47 @@
 
 #define INIT_EFLAGS 0b1000000010
 
+ProcessPool process_pool;
 RbTree process_tree;
 Queue run_queue;
 
-Process processes[MAX_PROCS] = {0};
-i32 running_pid = -1;
-u32 process_count = 0;
+Process *running = NULL;
+u16 pid_counter = 0;
+
+#define GET_PID(proc) (proc->rb_node.key)
 
 __attribute__((noreturn)) extern void
 jump_usermode(void (*f)(), void *stack, ProcessControlBlock *pcb);
 
-u16 next_pid() {
-    for (u32 i = 0; i < MAX_PROCS; ++i) {
-        if (processes[i].page_dir_paddr == 0)
-            return i;
-    }
+static Process *get_process(u16 pid) {
+    RbNode *node = rb_find(&process_tree, pid);
+    if (node)
+        return (Process *) ((u8 *) node - offsetof(Process, rb_node));
+    else
+        return NULL;
+}
 
-    KERNEL_ASSERT(false);
+static Process *run_queue_next() {
+    QueueNode *node = queue_poll(&run_queue);
+    if (node)
+        return (Process *) ((u8 *) node - offsetof(Process, queue_node));
+    else
+        return NULL;
+}
+
+static u16 next_free_pid() {
+    u16 pid = pid_counter;
+
+    do {
+        if (!rb_find(&process_tree, pid)) {
+            pid_counter = pid + 1;
+            return pid;
+        }
+
+        pid += 1;
+    } while (pid != pid_counter);
+
+    KERNEL_ASSERT(false); // Too many processes
 }
 
 #define RO_FLAGS PAGE_USER_MODE
@@ -88,26 +114,22 @@ void exec_sun(const char *name, int arg) {
 
     load_page_dir(kernel_page_dir);
 
-    u16 pid = next_pid();
-    processes[pid].page_dir_paddr = page_dir;
-    ++process_count;
+    u16 pid = next_free_pid();
+    Process *p = pool_create(&process_pool);
+    p->page_dir_paddr = page_dir;
+    p->blocked = false;
+    rb_insert(&process_tree, &p->rb_node, pid);
+    queue_add(&run_queue, &p->queue_node);
 }
 
 void schedule() {
-    KERNEL_ASSERT(process_count);
+    running = run_queue_next();
+    KERNEL_ASSERT(running);
 
-    if (running_pid == -1)
-        running_pid = 0;
-
-    for (u16 i = running_pid;; ++i) {
-        if (processes[i].page_dir_paddr != 0) {
-            ProcessControlBlock *pcb = PCB_ADDR;
-            load_page_dir(processes[i].page_dir_paddr);
-            KERNEL_ASSERT(pcb->page_dir_paddr == processes[i].page_dir_paddr);
-            running_pid = i;
-            jump_usermode((void (*)()) pcb->eip, (void *) pcb->esp, pcb);
-        }
-    }
+    ProcessControlBlock *pcb = PCB_ADDR;
+    load_page_dir(running->page_dir_paddr);
+    KERNEL_ASSERT(pcb->page_dir_paddr == running->page_dir_paddr);
+    jump_usermode((void (*)()) pcb->eip, (void *) pcb->esp, pcb);
 }
 
 void syscall_handler(CpuContext *ctx) {
@@ -143,16 +165,18 @@ void syscall_handler(CpuContext *ctx) {
             message_cpy[i] = *((char *) ctx->edx + i);
         }
         message_cpy[message_size] = '\0';
-        i32 org_pid = running_pid;
+        i32 org_pid = GET_PID(running);
 
         // Switch address space
-        load_page_dir(processes[ctx->ebx].page_dir_paddr);
+        Process *dst = get_process(ctx->ebx);
+        KERNEL_ASSERT(dst);
+        load_page_dir(dst->page_dir_paddr);
 
         // Send message to mailbox
         send_message(MAILBOX_ADDR, org_pid, message_size, message_cpy);
 
         // Switch back address space
-        load_page_dir(processes[org_pid].page_dir_paddr);
+        load_page_dir(running->page_dir_paddr);
         break;
     }
 
@@ -178,12 +202,13 @@ void preempt(InterruptRegisters *regs) {
     if (is_user_mode(regs->cs)) {
         ProcessControlBlock *pcb = PCB_ADDR;
 
+        KERNEL_ASSERT(pcb->page_dir_paddr == running->page_dir_paddr);
         pmemcpy(pcb, (u32 *) regs + 1, 8 * sizeof(u32));
         pcb->eflags = regs->eflags;
         pcb->eip = regs->eip;
         pcb->esp = regs->useresp;
 
-        running_pid += 1;
+        queue_add(&run_queue, &running->queue_node);
         pic_eoi(regs->int_no - 32);
         schedule(); // no return
     }
@@ -192,8 +217,9 @@ void preempt(InterruptRegisters *regs) {
     }
 }
 
-void scheduler_init() {
+void processes_init() {
     timer_callback = preempt;
+    pool_init(&process_pool);
     rb_init(&process_tree);
     queue_init(&run_queue);
 }

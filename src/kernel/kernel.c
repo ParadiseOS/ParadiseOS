@@ -61,10 +61,11 @@ void kernel_main(void) {
     kernel_test();
 #endif
 
+    processes_init();
+
     // Add your processes here
     // ex. exec_sun("binary.out", 0)
 
-    scheduler_init();
     schedule();
 
     for (;;) {

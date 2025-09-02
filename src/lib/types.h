@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 // clang-format off
 typedef uint64_t u64;
@@ -16,7 +17,5 @@ typedef int16_t  i16;
 typedef uint8_t  u8;
 typedef int8_t   i8;
 // clang-format on
-
-#define NULL ((void *) 0)
 
 #endif // TYPES_H_
