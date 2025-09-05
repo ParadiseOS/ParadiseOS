@@ -4,6 +4,7 @@
 #include "kernel/kernel.h"
 #include "lib/error.h"
 #include "lib/util.h"
+#include "process/processes.h"
 #include "terminal/terminal.h"
 
 extern u32 cpu_interrupts;
@@ -127,6 +128,8 @@ void init_idt() {
     load_idt(&idt_ptr);
 }
 
+#define INT_PAGE_FAULT 14
+
 const char *INTERRUPT_NAMES[32] = {
     "Division Error",
     "Debug",
@@ -192,6 +195,25 @@ void irq_handler(InterruptRegisters *regs) {
     pic_eoi(irq);
 }
 
+#define PF_EC_PRESENT 1
+#define PF_EC_WRITE 2
+#define PF_EC_USER 4
+
+static void report_page_fault(InterruptRegisters *regs) {
+    const char *access_type = regs->err_code & PF_EC_WRITE ? "write" : "read";
+    const char *mode = regs->err_code & PF_EC_USER ? "user" : "kernel";
+    const char *page_status = regs->err_code & PF_EC_PRESENT ? "protected" : "non-present";
+    u32 addr = regs->cr2;
+    u32 eip = regs->eip;
+    i32 pid = running ? GET_PID(running) : -1;
+
+    terminal_printf(
+        "\t%s of address %p at %p in \n"
+        "\t%s mode in pid %i was in a %s page\n",
+        access_type, addr, eip, mode, pid, page_status
+    );
+}
+
 /**
  * @brief Handles software interrupts. Routes to irq if external.
  * @param regs Interrupt registers
@@ -203,6 +225,11 @@ void isr_handler(InterruptRegisters *regs) {
         irq_handler(regs);
     else {
         terminal_printf("[INT] %s\n", INTERRUPT_NAMES[interrupt]);
+        switch (interrupt) {
+        case INT_PAGE_FAULT:
+            report_page_fault(regs);
+            break;
+        }
         kernel_panic();
     }
 }

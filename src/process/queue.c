@@ -14,6 +14,7 @@ void queue_add(Queue *q, QueueNode *node) {
         q->head = node;
 
     q->count += 1;
+    node->next = NULL;
     q->tail = node;
 }
 
