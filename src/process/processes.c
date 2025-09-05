@@ -28,8 +28,6 @@ Queue run_queue;
 Process *running = NULL;
 u16 pid_counter = 0;
 
-#define GET_PID(proc) (proc->rb_node.key)
-
 __attribute__((noreturn)) extern void
 jump_usermode(void (*f)(), void *stack, ProcessControlBlock *pcb);
 
@@ -175,18 +173,30 @@ void syscall_handler(CpuContext *ctx) {
         // Send message to mailbox
         send_message(MAILBOX_ADDR, org_pid, message_size, message_cpy);
 
+        if (dst->blocked) {
+            dst->blocked = false;
+            queue_add(&run_queue, &dst->queue_node);
+        }
+
         // Switch back address space
         load_page_dir(running->page_dir_paddr);
         break;
     }
 
-    // Read message from own mailbox
-    // $ebx -> pointer to where the message should be held (ensure 258 bytes are
-    // allocated) $ecx -> status of the read request (0 if no message, 1 if
-    // message written) $ecx is returned, no need to input anything
-    case 4:
-        ctx->ecx = read_message(MAILBOX_ADDR, (char *) ctx->ebx);
+    // Read message from own mailbox $ebx -> pointer to where the message should
+    // be held (ensure 258 bytes are allocated) $ecx -> status of the read
+    // request (0 if no message, 1 if message written) $ecx is returned, no need
+    // to input anything. Non-blocking if $edx is 0, blocking otherwise.
+    case 4: {
+        bool res = read_message(MAILBOX_ADDR, (char *) ctx->ebx);
+        ctx->ecx = res;
+        if (ctx->edx && !res) {
+            KERNEL_ASSERT(!running->blocked); // Can't issue syscall while blocked
+            running->blocked = true;
+            schedule();
+        }
         break;
+    }
 
     default:
         terminal_printf("Unknown syscall :(\n");

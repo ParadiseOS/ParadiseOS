@@ -81,10 +81,12 @@ typedef struct {
     u32 eip, cs, eflags, useresp;
 } CpuContext;
 
+#define GET_PID(proc) (proc->rb_node.key)
+
+extern Process *running;
+
 void exec_sun(const char *name, int arg);
-
 __attribute__((noreturn)) void schedule();
-
 void processes_init();
 
 #endif
