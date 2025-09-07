@@ -28,3 +28,9 @@ get_privilege_level:
     mov ax, cs
     and ax, 3
     ret
+
+public get_eflags
+get_eflags:
+    pushfd
+    pop eax
+    ret

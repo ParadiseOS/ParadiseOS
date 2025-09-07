@@ -8,6 +8,7 @@
 
 extern void load_gdt(TablePointer *);
 extern void load_tss(u32 gdt_index);
+extern u32 get_eflags();
 
 SegmentDescriptor gdt[128];
 
@@ -58,6 +59,7 @@ void init_tss() {
     initial_tss.ss0 = 0x10; // kernel data GDT entry
     initial_tss.esp0 = (u32) kernel_stack;
     initial_tss.io_base = TSS_SIZE;
+    initial_tss.eflags = get_eflags();
 
     load_tss(0x28); // TSS GDT entry
 }

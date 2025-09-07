@@ -318,13 +318,11 @@ void init_heap() {
 
 // Performs all operations required to initialize our kernel memory management.
 void mem_init() {
-    asm("cli"); // Probably don't want interrupts while doing this
     kernel_page_dir = get_page_dir_paddr();
     init_free_list_page();
     init_frames();
     reinit_paging();
     init_heap();
-    asm("sti");
 }
 
 // Allocates a given number of pages on the heap. Empty allocations are not

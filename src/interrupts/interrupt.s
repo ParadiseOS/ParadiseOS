@@ -59,7 +59,6 @@ extrn isr_handler
 
 rept 48 int_no:0 {
     interrupt_wrapper_error_code_#int_no:
-        cli
         push int_no
         pushad
         mov eax, cr2
@@ -71,11 +70,9 @@ rept 48 int_no:0 {
         add esp, 8
         popad
         add esp, 4
-        sti
         iret
     
     interrupt_wrapper_no_error_code_#int_no:
-        cli
         push 0
         push int_no
         pushad
@@ -88,14 +85,12 @@ rept 48 int_no:0 {
         add esp, 8
         popad
         add esp, 8
-        sti
         iret
 }
 
 extrn syscall_handler
 public syscall_wrapper
 syscall_wrapper:
-    cli
     pushad
 
     push esp
@@ -103,7 +98,6 @@ syscall_wrapper:
 
     add esp, 4
     popad
-    sti
     iret
 
 public load_idt

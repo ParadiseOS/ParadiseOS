@@ -28,6 +28,9 @@ Queue run_queue;
 Process *running = NULL;
 u16 pid_counter = 0;
 
+ProcessControlBlock *pcb = PCB_ADDR;
+Mailbox *mailbox = MAILBOX_ADDR;
+
 __attribute__((noreturn)) extern void
 jump_usermode(void (*f)(), void *stack, ProcessControlBlock *pcb);
 
@@ -70,8 +73,6 @@ void exec_sun(const char *name, int arg) {
 
     KERNEL_ASSERT(entry->text_size);
 
-    ProcessControlBlock *pcb = PCB_ADDR;
-    Mailbox *mailbox = MAILBOX_ADDR;
     void *text = PROCESS_ORG;
     void *rodata = align_next_page(text + entry->text_size - 1);
     void *data = align_next_page(rodata + entry->rodata_size - 1);
@@ -124,14 +125,29 @@ void schedule() {
     running = run_queue_next();
     KERNEL_ASSERT(running);
 
-    ProcessControlBlock *pcb = PCB_ADDR;
     load_page_dir(running->page_dir_paddr);
     KERNEL_ASSERT(pcb->page_dir_paddr == running->page_dir_paddr);
     jump_usermode((void (*)()) pcb->eip, (void *) pcb->esp, pcb);
 }
 
-void syscall_handler(CpuContext *ctx) {
+// TODO: unify the below two functions. It's not really great that we have two
+// different cpu context info formats for syscalls vs other interrupts.
 
+static void save_context_int(InterruptRegisters *regs) {
+    pmemcpy(pcb, (u32 *) regs + 1, 8 * sizeof(u32));
+    pcb->eflags = regs->eflags;
+    pcb->eip = regs->eip;
+    pcb->esp = regs->useresp;
+}
+
+static void save_context_syscall(CpuContext *ctx) {
+    pmemcpy(pcb, (u32 *) ctx, 8 * sizeof(u32));
+    pcb->eflags = ctx->eflags;
+    pcb->eip = ctx->eip;
+    pcb->esp = ctx->useresp;
+}
+
+void syscall_handler(CpuContext *ctx) {
     // $eax determines what the syscall does
     switch (ctx->eax) {
 
@@ -171,10 +187,12 @@ void syscall_handler(CpuContext *ctx) {
         load_page_dir(dst->page_dir_paddr);
 
         // Send message to mailbox
-        send_message(MAILBOX_ADDR, org_pid, message_size, message_cpy);
+        send_message(mailbox, org_pid, message_size, message_cpy);
 
         if (dst->blocked) {
             dst->blocked = false;
+            pcb->ecx = read_message(mailbox, dst->read_buf);
+            KERNEL_ASSERT(pcb->ecx);
             queue_add(&run_queue, &dst->queue_node);
         }
 
@@ -188,11 +206,13 @@ void syscall_handler(CpuContext *ctx) {
     // request (0 if no message, 1 if message written) $ecx is returned, no need
     // to input anything. Non-blocking if $edx is 0, blocking otherwise.
     case 4: {
-        bool res = read_message(MAILBOX_ADDR, (char *) ctx->ebx);
+        bool res = read_message(mailbox, (char *) ctx->ebx);
         ctx->ecx = res;
         if (ctx->edx && !res) {
             KERNEL_ASSERT(!running->blocked); // Can't issue syscall while blocked
             running->blocked = true;
+            running->read_buf = (void *) ctx->ebx;
+            save_context_syscall(ctx);
             schedule();
         }
         break;
@@ -210,14 +230,8 @@ bool is_user_mode(u32 cs) {
 
 void preempt(InterruptRegisters *regs) {
     if (is_user_mode(regs->cs)) {
-        ProcessControlBlock *pcb = PCB_ADDR;
-
         KERNEL_ASSERT(pcb->page_dir_paddr == running->page_dir_paddr);
-        pmemcpy(pcb, (u32 *) regs + 1, 8 * sizeof(u32));
-        pcb->eflags = regs->eflags;
-        pcb->eip = regs->eip;
-        pcb->esp = regs->useresp;
-
+        save_context_int(regs);
         queue_add(&run_queue, &running->queue_node);
         pic_eoi(regs->int_no - 32);
         schedule(); // no return
