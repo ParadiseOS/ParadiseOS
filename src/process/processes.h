@@ -16,7 +16,6 @@ typedef struct {
     RbNode rb_node;
 
     bool blocked;
-    void *read_buf;
 } Process;
 
 // NOTE: we assume the offsets of members up to eflags in the assembly so things

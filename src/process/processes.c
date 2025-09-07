@@ -191,7 +191,7 @@ void syscall_handler(CpuContext *ctx) {
 
         if (dst->blocked) {
             dst->blocked = false;
-            pcb->ecx = read_message(mailbox, dst->read_buf);
+            pcb->ecx = read_message(mailbox, (void *) pcb->ebx);
             KERNEL_ASSERT(pcb->ecx);
             queue_add(&run_queue, &dst->queue_node);
         }
@@ -211,7 +211,6 @@ void syscall_handler(CpuContext *ctx) {
         if (ctx->edx && !res) {
             KERNEL_ASSERT(!running->blocked); // Can't issue syscall while blocked
             running->blocked = true;
-            running->read_buf = (void *) ctx->ebx;
             save_context_syscall(ctx);
             schedule();
         }
