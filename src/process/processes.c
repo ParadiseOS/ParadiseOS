@@ -228,16 +228,12 @@ bool is_user_mode(u32 cs) {
 }
 
 void preempt(InterruptRegisters *regs) {
-    if (is_user_mode(regs->cs)) {
-        KERNEL_ASSERT(pcb->page_dir_paddr == running->page_dir_paddr);
-        save_context_int(regs);
-        queue_add(&run_queue, &running->queue_node);
-        pic_eoi(regs->int_no - 32);
-        schedule(); // no return
-    }
-    else {
-        pic_eoi(regs->int_no - 32);
-    }
+    KERNEL_ASSERT(is_user_mode(regs->cs));
+    KERNEL_ASSERT(pcb->page_dir_paddr == running->page_dir_paddr);
+    save_context_int(regs);
+    queue_add(&run_queue, &running->queue_node);
+    pic_eoi(regs->int_no - 32);
+    schedule();
 }
 
 void processes_init() {

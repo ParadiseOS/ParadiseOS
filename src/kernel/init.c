@@ -59,6 +59,8 @@ void init_tss() {
     initial_tss.ss0 = 0x10; // kernel data GDT entry
     initial_tss.esp0 = (u32) kernel_stack;
     initial_tss.io_base = TSS_SIZE;
+    // interrupts should be off at this point so this ensures that they are
+    // never enabled when re-entering the kernel
     initial_tss.eflags = get_eflags();
 
     load_tss(0x28); // TSS GDT entry
