@@ -66,6 +66,8 @@ void kernel_main(void) {
     // Add your processes here
     // ex. exec_sun("binary.out", 0)
 
+    asm("sti");
+
     schedule();
 
     for (;;) {
