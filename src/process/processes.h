@@ -47,5 +47,6 @@ extern Process *running;
 void exec_sun(const char *name, int arg);
 __attribute__((noreturn)) void schedule();
 void processes_init();
+Process *get_process(u16 pid);
 
 #endif

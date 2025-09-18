@@ -34,10 +34,13 @@ Mailbox *mailbox = MAILBOX_ADDR;
 __attribute__((noreturn)) extern void
 jump_usermode(void (*f)(), void *stack, ProcessControlBlock *pcb);
 
-static Process *get_process(u16 pid) {
+#define FIELD_PARENT_PTR(parent_type, field_name, field_ptr)                   \
+    ((parent_type *) ((u8 *) field_ptr - offsetof(parent_type, field_name)))
+
+Process *get_process(u16 pid) {
     RbNode *node = rb_find(&process_tree, pid);
     if (node)
-        return (Process *) ((u8 *) node - offsetof(Process, rb_node));
+        return FIELD_PARENT_PTR(Process, rb_node, node);
     else
         return NULL;
 }
@@ -45,7 +48,7 @@ static Process *get_process(u16 pid) {
 static Process *run_queue_next() {
     QueueNode *node = queue_poll(&run_queue);
     if (node)
-        return (Process *) ((u8 *) node - offsetof(Process, queue_node));
+        return FIELD_PARENT_PTR(Process, queue_node, node);
     else
         return NULL;
 }

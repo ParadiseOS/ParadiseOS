@@ -3,7 +3,10 @@
 #include "kernel/kernel.h"
 #include "lib/error.h"
 #include "lib/libp.h"
+#include "lib/util.h"
 #include "memory/heap.h"
+#include "process/processes.h"
+#include "syscall/syscall.h"
 #include "terminal/terminal.h"
 
 #define LOWER_MEM_PAGE_COUNT  256
@@ -110,7 +113,8 @@ void print_frame_usage() {
 }
 
 // Maps a page in virtual memory. Does not back it with a physical address.
-void map_page(void *vaddr, u32 paddr, u16 flags) {
+// Non-zero return means that the page was already mapped.
+RESULT map_page(void *vaddr, u32 paddr, u16 flags) {
     u32 pdi = get_pd_index(vaddr);
     u32 pti = get_pt_index(vaddr);
 
@@ -130,30 +134,33 @@ void map_page(void *vaddr, u32 paddr, u16 flags) {
 
     // If user mode is requested of the page, it must be present in the PDE.
     KERNEL_ASSERT(!user_mode_requested || pde_user_mode);
-    KERNEL_ASSERT(!entry_present(PTE(pdi, pti)));
+    if (entry_present(PTE(pdi, pti))) return RESULT_ERR;
 
     PTE(pdi, pti) = create_entry(paddr, flags);
+    return RESULT_OK;
 }
 
-// Unmaps a page from virtual memory and returns the frame address. The frame is
-// NOT freed.
-u32 unmap_page(void *vaddr) {
+// Unmaps a page from virtual memory and outputs the frame address to `paddr` if
+// non-null. The frame is NOT freed. Returns non-zero if the page was not
+// already mapped.
+RESULT unmap_page(void *vaddr, u32 *paddr) {
     u32 pdi = get_pd_index(vaddr);
     u32 pti = get_pt_index(vaddr);
 
-    KERNEL_ASSERT(entry_present(PDE(pdi)));
-    KERNEL_ASSERT(entry_present(PTE(pdi, pti)));
+    if (!entry_present(PDE(pdi)) || !entry_present(PTE(pdi, pti)))
+        return RESULT_ERR;
 
-    u32 paddr = get_paddr(PTE(pdi, pti));
+    if (paddr)
+        *paddr = get_paddr(PTE(pdi, pti));
     PTE(pdi, pti) = 0;
     invalidate_page(vaddr);
-    return paddr;
+    return RESULT_OK;
 }
 
 // Maps a series of pages to virtual memory.
 void map_pages(void *vaddr, u32 paddr, u16 flags, u32 count) {
     while (count--) {
-        map_page(vaddr, paddr, flags);
+        KERNEL_ASSERT(!map_page(vaddr, paddr, flags));
         paddr += PAGE_SIZE;
         vaddr += PAGE_SIZE;
     }
@@ -162,7 +169,7 @@ void map_pages(void *vaddr, u32 paddr, u16 flags, u32 count) {
 // Unmaps a series of pages from virtual memory. Does NOT free the frames.
 void unmap_pages(void *vaddr, u32 count) {
     while (count--) {
-        unmap_page(vaddr);
+        KERNEL_ASSERT(!unmap_page(vaddr, NULL));
         vaddr += PAGE_SIZE;
     }
 }
@@ -171,7 +178,7 @@ void unmap_pages(void *vaddr, u32 count) {
 // physical frames.
 void alloc_pages(void *vaddr, u16 flags, u32 count) {
     while (count--) {
-        map_page(vaddr, alloc_frame(), flags);
+        KERNEL_ASSERT(!map_page(vaddr, alloc_frame(), flags));
         vaddr += PAGE_SIZE;
     }
 }
@@ -180,7 +187,9 @@ void alloc_pages(void *vaddr, u16 flags, u32 count) {
 // frames.
 void free_pages(void *vaddr, u32 count) {
     while (count--) {
-        free_frame(unmap_page(vaddr));
+        u32 paddr;
+        KERNEL_ASSERT(!unmap_page(vaddr, &paddr));
+        free_frame(paddr);
         vaddr += PAGE_SIZE;
     }
 }
@@ -417,5 +426,47 @@ u32 new_page_dir() {
 
     // We don't actually want to free the frame
     heap_free(&kernel_heap, dir);
-    return unmap_page(dir);
+    u32 paddr;
+    KERNEL_ASSERT(!unmap_page(dir, &paddr));
+    return paddr;
+}
+
+#define VIRT_MAP_PID_NOT_FOUND  1
+#define VIRT_MAP_ALREADY_MAPPED 2
+
+// Maps a contiguous region of `n` pages starting at `vaddr` in the address
+// space of the process specified by `pid` using the physical addresses given in
+// `paddr`, an array of size `n`. `vaddr` will actually start at its page if its
+// not already aligned on a page boundary.
+SyscallResult virt_map(u32 pid, void *vaddr, u32 *paddr, u32 n) {
+    Process *process = NULL;
+    if (pid >> 16 == 0) // pid must be 16 bit
+        process = get_process(pid);
+    if (!process)
+        SYSCALL_RETURN(0, VIRT_MAP_PID_NOT_FOUND);
+
+    u32 old_pd_paddr = get_page_dir_paddr();
+    load_page_dir(process->page_dir_paddr);
+
+    u32 i;
+    for (i = 0; i < n; ++i) {
+        u32 error = map_page(vaddr + i * PAGE_SIZE, paddr[i], PAGE_USER_MODE | PAGE_WRITABLE);
+        if (error)
+            break;
+    }
+
+    if (i != n) {
+        // We collided with an already mapped region so we have to undo whatever
+        // we have done.
+        //
+        // NOTE: this will retain any page tables that were
+        // allocated while we tried to map the region. Should this be the case?
+        for (u32 j = 0; j <= i; ++j)
+            KERNEL_ASSERT(!unmap_page(vaddr + j * PAGE_SIZE, NULL));
+
+        SYSCALL_RETURN(0, VIRT_MAP_ALREADY_MAPPED);
+    }
+
+    load_page_dir(old_pd_paddr);
+    SYSCALL_RETURN(0, 0);
 }
