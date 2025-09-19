@@ -186,6 +186,21 @@ void terminal_print_int(u32 n, bool is_signed) {
 }
 
 void terminal_print_float(f64 n, u32 precision) {
+    if (n != n) {
+        terminal_print_string("nan");
+        return;
+    }
+
+    if (n == INFINITY) {
+        terminal_print_string("inf");
+        return;
+    }
+
+    if (n == NEG_INFINITY) {
+        terminal_print_string("-inf");
+        return;
+    }
+
     if (n < 0) {
         terminal_putchar('-');
         n = -n;
@@ -220,7 +235,6 @@ void terminal_print_float(f64 n, u32 precision) {
     }
 }
 
-// TODO: implement printing of 64 bit integers
 void terminal_printf(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
