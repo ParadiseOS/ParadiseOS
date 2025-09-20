@@ -1,7 +1,7 @@
 FROM debian:bullseye-slim
 
 RUN apt update && apt install -y wget grub-pc-bin xorriso build-essential fasm \
-    bison flex libgmp3-dev libmpc-dev libmpfr-dev texinfo
+    bison flex libgmp3-dev libmpc-dev libmpfr-dev texinfo gcc-multilib
 
 WORKDIR /usr
 RUN mkdir -p app/cross-compiler
@@ -44,9 +44,3 @@ RUN mkdir elf2sun
 RUN mkdir bin
 
 RUN mkdir -p paradise-os/boot/grub
-
-ARG TESTS_ENABLED
-ARG BUILD_PROGRAMS
-ARG LIBP
-
-CMD ["sh", "scripts/build.sh"]
