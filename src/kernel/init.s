@@ -4,8 +4,8 @@ section ".text" executable
 
 public init_fpu
 init_fpu:
+    ; We may need to set and clear bits in $cr0 and $cr4 in the future
     fninit
-    emms
     ret
 
 public load_gdt

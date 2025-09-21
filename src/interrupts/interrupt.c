@@ -195,13 +195,14 @@ void irq_handler(InterruptRegisters *regs) {
 }
 
 #define PF_EC_PRESENT 1
-#define PF_EC_WRITE 2
-#define PF_EC_USER 4
+#define PF_EC_WRITE   2
+#define PF_EC_USER    4
 
 static void report_page_fault(InterruptRegisters *regs) {
     const char *access_type = regs->err_code & PF_EC_WRITE ? "write" : "read";
     const char *mode = regs->err_code & PF_EC_USER ? "user" : "kernel";
-    const char *page_status = regs->err_code & PF_EC_PRESENT ? "protected" : "non-present";
+    const char *page_status =
+        regs->err_code & PF_EC_PRESENT ? "protected" : "non-present";
     u32 addr = regs->cr2;
     u32 eip = regs->eip;
     i32 pid = running ? GET_PID(running) : -1;

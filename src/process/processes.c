@@ -129,6 +129,7 @@ void schedule() {
 
     load_page_dir(running->page_dir_paddr);
     KERNEL_ASSERT(pcb->page_dir_paddr == running->page_dir_paddr);
+    fpu_restore(pcb->fpu_regs);
     jump_usermode((void (*)()) pcb->eip, (void *) pcb->esp, pcb);
 }
 
@@ -140,6 +141,7 @@ static void save_context_int(InterruptRegisters *regs) {
     pcb->eflags = regs->eflags;
     pcb->eip = regs->eip;
     pcb->esp = regs->useresp;
+    fpu_save(pcb->fpu_regs);
 }
 
 static void save_context_syscall(CpuContext *ctx) {
@@ -147,16 +149,7 @@ static void save_context_syscall(CpuContext *ctx) {
     pcb->eflags = ctx->eflags;
     pcb->eip = ctx->eip;
     pcb->esp = ctx->useresp;
-    for (u16 i = running_pid;; ++i) {
-        if (processes[i].page_dir_paddr != 0) {
-            ProcessControlBlock *pcb = PCB_ADDR;
-            load_page_dir(processes[i].page_dir_paddr);
-            fpu_restore(pcb->fpu_regs);
-            KERNEL_ASSERT(pcb->page_dir_paddr == processes[i].page_dir_paddr);
-            running_pid = i;
-            jump_usermode((void (*)()) pcb->eip, (void *) pcb->esp, pcb);
-        }
-    }
+    fpu_save(pcb->fpu_regs);
 }
 
 void syscall_handler(CpuContext *ctx) {
@@ -170,13 +163,12 @@ void syscall_handler(CpuContext *ctx) {
         for (u32 i = 0; i < ctx->ecx; i++) {
             terminal_putchar(*((char *) ctx->ebx + i));
         }
-        terminal_putchar('\n');
         break;
 
     // Print null-terminated string
     // $ebx -> pointer to the string
     case 2:
-        terminal_printf("%s\n", ctx->ebx);
+        terminal_printf("%s", ctx->ebx);
         break;
 
     // Send message to another processes mailbox
@@ -245,16 +237,6 @@ void preempt(InterruptRegisters *regs) {
         KERNEL_ASSERT(pcb->page_dir_paddr == running->page_dir_paddr);
         save_context_int(regs);
         queue_add(&run_queue, &running->queue_node);
-        ProcessControlBlock *pcb = PCB_ADDR;
-
-        pmemcpy(pcb, (u32 *) regs + 1, 8 * sizeof(u32));
-        pcb->eflags = regs->eflags;
-        pcb->eip = regs->eip;
-        pcb->esp = regs->useresp;
-
-        fpu_save(&pcb->fpu_regs);
-
-        running_pid += 1;
         pic_eoi(regs->int_no - 32);
         schedule();
     }

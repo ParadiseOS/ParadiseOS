@@ -207,7 +207,7 @@ void terminal_print_float(f64 n, u32 precision) {
     }
 
     u32 integer = (u32) n;
-    terminal_print_int(integer, FALSE);
+    terminal_print_int(integer, false);
 
     if (precision == 0)
         return;
@@ -280,11 +280,10 @@ void terminal_printf(const char *fmt, ...) {
                     precision = precision * 10 + (*fmt - '0');
                 }
 
-                // Check for the 'f' specifier
                 if (*(fmt + 1) == 'f') {
                     fmt++;
                     terminal_print_float(va_arg(args, f64), precision);
-                    break; // break out of the main switch
+                    break;
                 }
             }
             default:
