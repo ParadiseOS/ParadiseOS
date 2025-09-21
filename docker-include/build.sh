@@ -43,7 +43,7 @@ if [ "$LIBP" = true ]; then
     cd libp
     ./build_libp.sh
     cd ..
-    mv ./libp/build/libp.o ./elf2sun/programs
+    mv ./libp/build/libp.o ./libp/build/libpm.o ./libp/build/start.o ./elf2sun/programs/
     printf "\n"
 fi
 
