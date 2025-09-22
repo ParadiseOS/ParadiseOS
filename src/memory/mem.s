@@ -2,18 +2,6 @@ format ELF
 
 section ".text" executable
 
-public fpu_save
-fpu_save:
-    mov eax, [esp+0x04]
-    fxsave [eax]
-    ret
-
-public fpu_restore
-fpu_restore:
-    mov eax, [esp+0x04]
-    fxrstor [eax]
-    ret
-
 ;; NOTE: This won't work for cpu families earlier than i486. We can use
 ;; conditional compilation at some point later to support more platforms.
 public invalidate_page

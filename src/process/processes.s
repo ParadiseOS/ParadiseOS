@@ -32,3 +32,16 @@ jump_usermode:
     mov edx, [edx+0x14]
 
     iret
+
+
+public fpu_save
+fpu_save:
+    mov eax, [esp+0x04]
+    fxsave [eax]
+    ret
+
+public fpu_restore
+fpu_restore:
+    mov eax, [esp+0x04]
+    fxrstor [eax]
+    ret
