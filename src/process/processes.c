@@ -11,6 +11,7 @@
 #include "process/queue.h"
 #include "process/rb_tree.h"
 #include "sun/sun.h"
+#include "syscall/syscall.h"
 #include "terminal/terminal.h"
 
 #define STACK_SIZE   (4 * PAGE_SIZE)
@@ -25,7 +26,8 @@ ProcessPool process_pool;
 RbTree process_tree;
 Queue run_queue;
 
-Process *running = NULL;
+Process *current = NULL;
+CpuContext *current_ctx = NULL;
 u16 pid_counter = 0;
 
 ProcessControlBlock *pcb = PCB_ADDR;
@@ -127,11 +129,11 @@ void exec_sun(const char *name, int arg) {
 }
 
 void schedule() {
-    running = run_queue_next();
-    KERNEL_ASSERT(running);
+    current = run_queue_next();
+    KERNEL_ASSERT(current);
 
-    load_page_dir(running->page_dir_paddr);
-    KERNEL_ASSERT(pcb->page_dir_paddr == running->page_dir_paddr);
+    load_page_dir(current->page_dir_paddr);
+    KERNEL_ASSERT(pcb->page_dir_paddr == current->page_dir_paddr);
     fpu_restore(pcb->fpu_regs);
     jump_usermode((void (*)()) pcb->eip, (void *) pcb->esp, pcb);
 }
@@ -156,79 +158,10 @@ static void save_context_syscall(CpuContext *ctx) {
 }
 
 void syscall_handler(CpuContext *ctx) {
-    // $eax determines what the syscall does
-    switch (ctx->eax) {
-
-    // Print string
-    // $ebx -> pointer to the string
-    // $ecx -> the size of the string
-    case 1:
-        for (u32 i = 0; i < ctx->ecx; i++) {
-            terminal_putchar(*((char *) ctx->ebx + i));
-        }
-        break;
-
-    // Print null-terminated string
-    // $ebx -> pointer to the string
-    case 2:
-        terminal_printf("%s", ctx->ebx);
-        break;
-
-    // Send message to another processes mailbox
-    // $ah -> Flags (not implemented yet, assume indirect flag is always set for
-    // now) $ebx -> Receiver PID $cl -> Data Size $edx -> Data $edi -> Data
-    // (Depends on flag)
-    case 3: {
-        // Copy message
-        u8 message_size = ctx->ecx & 0xFF;
-        char message_cpy[255];
-        for (u8 i = 0; i < message_size; i++) {
-            message_cpy[i] = *((char *) ctx->edx + i);
-        }
-        message_cpy[message_size] = '\0';
-        i32 org_pid = GET_PID(running);
-
-        // Switch address space
-        Process *dst = get_process(ctx->ebx);
-        KERNEL_ASSERT(dst);
-        load_page_dir(dst->page_dir_paddr);
-
-        // Send message to mailbox
-        send_message(mailbox, org_pid, message_size, message_cpy);
-
-        if (dst->blocked) {
-            dst->blocked = false;
-            pcb->ecx = read_message(mailbox, (void *) pcb->ebx);
-            KERNEL_ASSERT(pcb->ecx);
-            queue_add(&run_queue, &dst->queue_node);
-        }
-
-        // Switch back address space
-        load_page_dir(running->page_dir_paddr);
-        break;
-    }
-
-    // Read message from own mailbox $ebx -> pointer to where the message should
-    // be held (ensure 258 bytes are allocated) $ecx -> status of the read
-    // request (0 if no message, 1 if message written) $ecx is returned, no need
-    // to input anything. Non-blocking if $edx is 0, blocking otherwise.
-    case 4: {
-        bool res = read_message(mailbox, (char *) ctx->ebx);
-        ctx->ecx = res;
-        if (ctx->edx && !res) {
-            KERNEL_ASSERT(!running->blocked
-            ); // Can't issue syscall while blocked
-            running->blocked = true;
-            save_context_syscall(ctx);
-            schedule();
-        }
-        break;
-    }
-
-    default:
+    current_ctx = ctx;
+    if (!dispatch_syscall(ctx))
         terminal_printf("Unknown syscall :(\n");
-        break;
-    }
+    current_ctx = NULL;
 }
 
 bool is_user_mode(u32 cs) {
@@ -237,9 +170,9 @@ bool is_user_mode(u32 cs) {
 
 void preempt(InterruptRegisters *regs) {
     if (is_user_mode(regs->cs)) {
-        KERNEL_ASSERT(pcb->page_dir_paddr == running->page_dir_paddr);
+        KERNEL_ASSERT(pcb->page_dir_paddr == current->page_dir_paddr);
         save_context_int(regs);
-        queue_add(&run_queue, &running->queue_node);
+        queue_add(&run_queue, &current->queue_node);
         pic_eoi(regs->int_no - 32);
         schedule();
     }
@@ -248,9 +181,50 @@ void preempt(InterruptRegisters *regs) {
     }
 }
 
+SyscallResult syscall_send_message(u32 pid, u32 len, char *data) {
+    u8 message_size = len & 0xFF;
+    char message_cpy[256];
+    pmemcpy(message_cpy, data, message_size);
+    message_cpy[message_size] = '\0';
+    i32 org_pid = GET_PID(current);
+
+    // Switch address space
+    Process *dst = get_process(pid);
+    KERNEL_ASSERT(dst);
+    load_page_dir(dst->page_dir_paddr);
+
+    // Send message to mailbox
+    send_message(mailbox, org_pid, message_size, message_cpy);
+
+    if (dst->blocked) {
+        dst->blocked = false;
+        pcb->eax = read_message(mailbox, (void *) pcb->ebx);
+        KERNEL_ASSERT(pcb->eax);
+        queue_add(&run_queue, &dst->queue_node);
+    }
+
+    // Switch back address space
+    load_page_dir(current->page_dir_paddr);
+    SYSCALL_RETURN(0, 0);
+}
+
+SyscallResult syscall_read_message(char *out, u32 blocking) {
+    bool res = read_message(mailbox, out);
+    if (blocking && !res) {
+        KERNEL_ASSERT(!current->blocked); // Can't issue syscall while blocked
+        current->blocked = true;
+        save_context_syscall(current_ctx);
+        schedule();
+    }
+    SYSCALL_RETURN(res, 0);
+}
+
 void processes_init() {
     timer_callback = preempt;
     pool_init(&process_pool);
     rb_init(&process_tree);
     queue_init(&run_queue);
+
+    register_syscall(3, syscall_send_message);
+    register_syscall(4, syscall_read_message);
 }

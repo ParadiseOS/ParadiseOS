@@ -205,7 +205,7 @@ static void report_page_fault(InterruptRegisters *regs) {
         regs->err_code & PF_EC_PRESENT ? "protected" : "non-present";
     u32 addr = regs->cr2;
     u32 eip = regs->eip;
-    i32 pid = running ? GET_PID(running) : -1;
+    i32 pid = current ? GET_PID(current) : -1;
 
     terminal_printf(
         "\t%s of address %p at %p in \n"
