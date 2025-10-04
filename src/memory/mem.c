@@ -438,7 +438,7 @@ u32 new_page_dir() {
 // space of the process specified by `pid` using the physical addresses given in
 // `paddr`, an array of size `n`. `vaddr` will actually start at its page if its
 // not already aligned on a page boundary.
-SyscallResult virt_map(u32 pid, void *vaddr, u32 *paddr, u32 n) {
+SyscallResult syscall_virt_map(u32 pid, void *vaddr, u32 *paddr, u32 n) {
     Process *process = NULL;
     if (pid >> 16 == 0) // pid must be 16 bit
         process = get_process(pid);

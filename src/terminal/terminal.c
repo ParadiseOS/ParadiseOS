@@ -1,6 +1,7 @@
 #include "terminal.h"
 #include "drivers/serial/io.h"
 #include "lib/util.h"
+#include "syscall/syscall.h"
 #include <stdarg.h>
 
 Terminal terminal;
@@ -19,19 +20,6 @@ void update_cursor() {
     outb(0x3D5, (u8) (pos & 0xFF));
     outb(0x3D4, 0x0E);
     outb(0x3D5, (u8) ((pos >> 8) & 0xFF));
-}
-
-void terminal_init(usize width, usize height, u16 *buffer) {
-    terminal.row = 0;
-    terminal.col = 0;
-    terminal.width = width;
-    terminal.height = height;
-    terminal.color = vga_color_create(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
-    terminal.buffer = buffer;
-
-    for (usize i = 0; i < terminal.width * terminal.height; ++i) {
-        terminal.buffer[i] = vga_entry_create(' ', terminal.color);
-    }
 }
 
 void terminal_scroll(void) {
@@ -294,4 +282,33 @@ void terminal_printf(const char *fmt, ...) {
             terminal_putchar(c);
         }
     }
+}
+
+SyscallResult syscall_print_slice_string(char *s, u32 n) {
+    for (u32 i = 0; i < n; i++) {
+        terminal_putchar(s[i]);
+    }
+
+    SYSCALL_RETURN(0, 0);
+}
+
+SyscallResult syscall_print_string(char *s) {
+    terminal_printf("%s", s);
+    SYSCALL_RETURN(0, 0);
+}
+
+void terminal_init(usize width, usize height, u16 *buffer) {
+    terminal.row = 0;
+    terminal.col = 0;
+    terminal.width = width;
+    terminal.height = height;
+    terminal.color = vga_color_create(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
+    terminal.buffer = buffer;
+
+    for (usize i = 0; i < terminal.width * terminal.height; ++i) {
+        terminal.buffer[i] = vga_entry_create(' ', terminal.color);
+    }
+
+    register_syscall(1, syscall_print_slice_string);
+    register_syscall(2, syscall_print_string);
 }
