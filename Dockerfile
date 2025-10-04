@@ -8,8 +8,8 @@ RUN mkdir -p app/cross-compiler
 WORKDIR app/cross-compiler
 
 # Fetch and extract source code for binutils and gcc
-RUN wget "https://ftp.gnu.org/gnu/gcc/gcc-13.2.0/gcc-13.2.0.tar.gz"
-RUN wget "https://ftp.gnu.org/gnu/binutils/binutils-2.41.tar.gz"
+RUN wget "http://mirror.rit.edu/gnu/gcc/gcc-13.2.0/gcc-13.2.0.tar.gz"
+RUN wget "http://mirror.rit.edu/gnu/binutils/binutils-2.41.tar.gz"
 RUN tar -xzf "gcc-13.2.0.tar.gz"
 RUN tar -xzf "binutils-2.41.tar.gz"
 RUN rm "gcc-13.2.0.tar.gz"
