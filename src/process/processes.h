@@ -42,7 +42,8 @@ typedef struct {
 
 #define GET_PID(proc) (proc->rb_node.key)
 
-extern Process *running;
+extern Process *current;
+extern CpuContext *current_ctx;
 
 void exec_sun(const char *name, int arg);
 __attribute__((noreturn)) void schedule();

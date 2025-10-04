@@ -15,7 +15,7 @@ typedef struct {
     } while (false)
 
 void register_syscall(u32 num, void *syscall);
-void dispatch_syscall(u32 num, ProcessControlBlock *pcb);
+bool dispatch_syscall(CpuContext *ctx);
 void *delete_syscall(u32 num);
 
 #endif // SYSCALL_H_
