@@ -134,10 +134,10 @@ RESULT map_page(void *vaddr, u32 paddr, u16 flags) {
 
     // If user mode is requested of the page, it must be present in the PDE.
     KERNEL_ASSERT(!user_mode_requested || pde_user_mode);
-    if (entry_present(PTE(pdi, pti))) return RESULT_ERR;
+    if (entry_present(PTE(pdi, pti))) return true;
 
     PTE(pdi, pti) = create_entry(paddr, flags);
-    return RESULT_OK;
+    return false;
 }
 
 // Unmaps a page from virtual memory and outputs the frame address to `paddr` if
@@ -148,13 +148,13 @@ RESULT unmap_page(void *vaddr, u32 *paddr) {
     u32 pti = get_pt_index(vaddr);
 
     if (!entry_present(PDE(pdi)) || !entry_present(PTE(pdi, pti)))
-        return RESULT_ERR;
+        return true;
 
     if (paddr)
         *paddr = get_paddr(PTE(pdi, pti));
     PTE(pdi, pti) = 0;
     invalidate_page(vaddr);
-    return RESULT_OK;
+    return false;
 }
 
 // Maps a series of pages to virtual memory.

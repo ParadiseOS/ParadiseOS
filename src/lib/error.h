@@ -17,11 +17,7 @@
         }                                                                      \
     } while (false)
 
-typedef u32 Result;
-
-#define RESULT __attribute__((warn_unused_result)) Result
-#define RESULT_OK  0
-#define RESULT_ERR 1
+#define RESULT __attribute__((warn_unused_result)) bool
 
 extern __attribute__((noreturn)) void panic_handler();
 
