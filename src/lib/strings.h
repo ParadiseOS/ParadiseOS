@@ -3,6 +3,8 @@
 
 #include "types.h" // For u32, etc.
 
+const char HEX_DIGITS[] = "0123456789ABCDEF";
+
 /**
  * @brief Writes a formatted string to a buffer, ensuring not to write more
  * than n characters (including the null terminator).
