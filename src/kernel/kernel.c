@@ -11,6 +11,7 @@
 #include "sun/sun.h"
 #include "terminal/terminal.h"
 #include "tests/testing.h"
+#include "lib/strings.h"
 
 const u32 kernel_start_paddr = (u32) &_kernel_start_paddr;
 const void *kernel_start_vaddr = &_kernel_start_vaddr;
@@ -68,8 +69,21 @@ void kernel_main(void) {
 
     processes_init();
 
+    // TODO:
+    // -L To set the Log level
+
     // Add your processes here
     // ex. exec_sun("binary.out", 0)
+    char buffer[256];
+    int val = 100;
+    int len  = snprintf(NULL, 256, "%d", val);
+    int len2 = snprintf(buffer, 256, "%d", val);
+
+
+    terminal_printf("Length of string, %d", len);
+    terminal_printf("Length of string (when written) %d", 256, len2);
+    terminal_printf("Formatted String: <%s>", buffer);
+
 
     asm("sti");
 
