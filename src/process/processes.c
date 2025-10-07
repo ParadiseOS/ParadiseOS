@@ -220,7 +220,7 @@ SyscallResult syscall_read_message(char *out, u32 blocking) {
 }
 
 void processes_init() {
-    timer_callback = preempt;
+    syscall_reg_tmr_cb(preempt, 20 /*ms*/);
     pool_init(&process_pool);
     rb_init(&process_tree);
     queue_init(&run_queue);
