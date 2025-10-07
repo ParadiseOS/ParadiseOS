@@ -221,7 +221,7 @@ int snprintf(char *buffer, u32 n, const char *fmt, ...) {
     va_end(args);
 
     if (buffer && n > 0) {
-        u32 final_pos = ((u32)total_len < limit) ? total_len : limit;
+        u32 final_pos = ((u32)total_len < limit) ? (u32)total_len : limit;
         buffer[final_pos] = '\0';
     }
 
