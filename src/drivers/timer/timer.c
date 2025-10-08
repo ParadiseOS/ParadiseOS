@@ -6,12 +6,18 @@
 #include "syscall/syscall.h"
 #include "terminal/terminal.h"
 
+#define DEFAULT_SCHED_TICKS 10
+
 static u64 system_ticks; // Total number of system ticks
 static u32 sched_ticks;  // Ticks between scheduler function call
 static u32 sched_tick_cur;
 
 void (*sched_callback)(InterruptRegisters *regs) = NULL;
 const u32 freq = 1000;
+
+void timer_no_op() {
+    return;
+}
 
 void timer_handler(InterruptRegisters *regs) {
     if (sched_tick_cur == 0) {
@@ -35,7 +41,9 @@ void init_timer() {
     irq_install_handler(0, timer_handler);
 
     system_ticks = 0;
-    sched_ticks = 10; // Default time until user override w/ syscall
+    sched_ticks = DEFAULT_SCHED_TICKS; // Until user override w/ syscall
+    sched_tick_cur = DEFAULT_SCHED_TICKS;
+    sched_callback = timer_no_op;
 
     register_syscall(5, syscall_reg_tmr_cb);
 
