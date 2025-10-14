@@ -46,39 +46,71 @@ u32 total_frames = 0;
 
 Heap kernel_heap;
 
-u32 get_pd_index(void *vaddr) {
+typedef struct {
+    u16 pdi;
+    u16 pti;
+    u32 entry;
+} EntryInfo;
+
+static u32 get_pd_index(void *vaddr) {
     return (u32) vaddr >> 22;
 }
 
-u32 get_pt_index(void *vaddr) {
+static u32 get_pt_index(void *vaddr) {
     return ((u32) vaddr >> 12) & 0x3FF;
 }
 
-u32 get_paddr(u32 entry) {
+static u32 get_paddr(u32 entry) {
     return entry & ~0xFFF;
 }
 
-u16 get_flags(u32 entry) {
+static u16 get_flags(u32 entry) {
     return entry & 0xFFF;
 }
 
-u32 *get_page_table(u32 pd_index) {
+__attribute__((warn_unused_result))
+static u32 set_paddr(u32 entry, u32 paddr) {
+    return get_flags(entry) | paddr;
+}
+
+// __attribute__((warn_unused_result))
+// static u16 set_flags(u32 entry, u16 flags) {
+//     return get_paddr(entry) | flags;
+// }
+
+static u32 *get_page_table(u32 pd_index) {
     return &PTE(pd_index, 0);
 }
 
-bool entry_present(u32 entry) {
+static bool entry_present(u32 entry) {
     return (entry & 1) != 0;
 }
 
-u32 get_entry(void *vaddr) {
+static u32 get_entry(void *vaddr) {
     u32 pdi = get_pd_index(vaddr);
     if (!entry_present(PDE(pdi)))
         return 0;
     return PTE(pdi, get_pt_index(vaddr));
 }
 
-u32 create_entry(u32 paddr, u16 flags) {
+static u32 create_entry(u32 paddr, u16 flags) {
     return (paddr & 0xFFFFF000) | flags | 1;
+}
+
+static EntryInfo get_entry_info(void *vaddr) {
+    return (EntryInfo) {
+        .pdi = get_pd_index(vaddr),
+        .pti = get_pt_index(vaddr),
+        .entry = get_entry(vaddr),
+    };
+}
+
+// updates the page tables based on an entry
+static void flush_entry_info(EntryInfo e) {
+    KERNEL_ASSERT(entry_present(PDE(e.pdi)));
+    KERNEL_ASSERT(entry_present(PTE(e.pdi, e.pti)));
+
+    PTE(e.pdi, e.pti) = e.entry;
 }
 
 void init_page_table(u32 *table) {
@@ -155,6 +187,25 @@ RESULT unmap_page(void *vaddr, u32 *paddr) {
     PTE(pdi, pti) = 0;
     invalidate_page(vaddr);
     return false;
+}
+
+// Swaps the backing frames of two already allocated pages. Permissions remain
+// the same for each page.
+void swap_page_frames(void *vaddr1, void *vaddr2) {
+    EntryInfo info1 = get_entry_info(vaddr1);
+    EntryInfo info2 = get_entry_info(vaddr2);
+
+    u32 swapped_entry1 = set_paddr(info1.entry, get_paddr(info2.entry));
+    u32 swapped_entry2 = set_paddr(info2.entry, get_paddr(info1.entry));
+
+    info1.entry = swapped_entry1;
+    info2.entry = swapped_entry2;
+
+    flush_entry_info(info1);
+    flush_entry_info(info2);
+
+    invalidate_page(vaddr1);
+    invalidate_page(vaddr2);
 }
 
 // Maps a series of pages to virtual memory.
