@@ -9,10 +9,7 @@ typedef struct {
     u32 err;
 } SyscallResult;
 
-#define SYSCALL_RETURN(ret, err)                                               \
-    do {                                                                       \
-        return (SyscallResult) { ret, err };                                   \
-    } while (false)
+#define SYSCALL_RETURN(ret, err) return (SyscallResult) {ret, err}
 
 void register_syscall(u32 num, void *syscall);
 bool dispatch_syscall(CpuContext *ctx);
