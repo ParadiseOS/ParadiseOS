@@ -5,6 +5,7 @@
 
 #include <stdarg.h>
 
+static const char HEX_DIGITS[] = "0123456789ABCDEF";
 
 static u32 snprint_string(const char *str, u32 n, char *buffer_) {
     u32 len = 0;
@@ -157,23 +158,24 @@ static u32 snprint_float(f64 val, u32 precision, u32 n, char *buffer_) {
     return snprint_string(temp_buf, n, buffer_);
 }
 
-int snprintf(char *buffer, u32 n, const char *fmt, ...) {
-    int total_len = 0;
+// Returns length of would have been string (NOT INCLUDING NULL TERMINATOR)
+// Doesn't Write if buffer is NULL
+// n includes the NULL Terminator
+u32 snprintf(char *buffer, u32 n, const char *fmt, ...) {
+    u32 current_length = 0;
 
     va_list args;
     va_start(args, fmt);
 
-    u32 limit = (n > 0) ? n - 1 : 0;
+    u32 limit = (n != 0) ? n - 1: 0;
 
     for (; *fmt; ++fmt) {
-        u32 remaining = 0;
-        if ((u32)total_len < limit) {
-            remaining = limit - total_len;
-        }
+        u32 remaining = (current_length > limit) ? 0 : limit - current_length;
+
 
         // current_pos is NULL if we have no buffer or are out of space.
-        char *current_pos = buffer ? buffer + total_len : NULL;
-        if ((u32)total_len >= limit) {
+        char *current_pos = buffer ? buffer + current_length : NULL;
+        if ((u32)current_length >= limit) {
             current_pos = NULL;
         }
 
@@ -215,15 +217,23 @@ int snprintf(char *buffer, u32 n, const char *fmt, ...) {
             if (current_pos) *current_pos = *fmt;
             segment_len = 1;
         }
-        total_len += segment_len;
+        current_length += segment_len;
     }
 
     va_end(args);
 
     if (buffer && n > 0) {
-        u32 final_pos = ((u32)total_len < limit) ? (u32)total_len : limit;
+        u32 final_pos = ((u32)current_length < limit) ? (u32)current_length : limit;
         buffer[final_pos] = '\0';
     }
 
-    return total_len;
+    return current_length;
+}
+
+i32 strcmp(const char *s1, const char *s2) {
+    while (*s1 && *s2 && *s1 == *s2) {
+        ++s1;
+        ++s2;
+    };
+    return *(const unsigned char *)s1 - *(const unsigned char *)s2;
 }

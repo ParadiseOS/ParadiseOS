@@ -93,7 +93,7 @@ void terminal_print_string(const char *string) {
     }
 }
 
-const char HEX_DIGITS[] = "0123456789ABCDEF";
+static const char HEX_DIGITS[] = "0123456789ABCDEF";
 
 void terminal_print_hex(u32 n) {
     if (n == 0) {
