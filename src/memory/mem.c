@@ -68,8 +68,7 @@ static u16 get_flags(u32 entry) {
     return entry & 0xFFF;
 }
 
-__attribute__((warn_unused_result))
-static u32 set_paddr(u32 entry, u32 paddr) {
+__attribute__((warn_unused_result)) static u32 set_paddr(u32 entry, u32 paddr) {
     return get_flags(entry) | paddr;
 }
 
@@ -166,7 +165,8 @@ RESULT map_page(void *vaddr, u32 paddr, u16 flags) {
 
     // If user mode is requested of the page, it must be present in the PDE.
     KERNEL_ASSERT(!user_mode_requested || pde_user_mode);
-    if (entry_present(PTE(pdi, pti))) return true;
+    if (entry_present(PTE(pdi, pti)))
+        return true;
 
     PTE(pdi, pti) = create_entry(paddr, flags);
     return false;
@@ -501,7 +501,9 @@ SyscallResult syscall_virt_map(u32 pid, void *vaddr, u32 *paddr, u32 n) {
 
     u32 i;
     for (i = 0; i < n; ++i) {
-        u32 error = map_page(vaddr + i * PAGE_SIZE, paddr[i], PAGE_USER_MODE | PAGE_WRITABLE);
+        u32 error = map_page(
+            vaddr + i * PAGE_SIZE, paddr[i], PAGE_USER_MODE | PAGE_WRITABLE
+        );
         if (error)
             break;
     }
