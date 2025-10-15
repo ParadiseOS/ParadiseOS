@@ -158,14 +158,14 @@ static u32 snprint_float(f64 val, u32 precision, u32 n, char *buffer_) {
     return snprint_string(temp_buf, n, buffer_);
 }
 
-// Returns length of would have been string (NOT INCLUDING NULL TERMINATOR)
-// Doesn't Write if buffer is NULL
-// n includes the NULL Terminator
 u32 snprintf(char *buffer, u32 n, const char *fmt, ...) {
-    u32 current_length = 0;
-
     va_list args;
     va_start(args, fmt);
+    return vsnprintf(buffer, n, fmt, args);
+}
+
+u32 vsnprintf(char *buffer, u32 n, const char *fmt, va_list args) {
+    u32 current_length = 0;
 
     u32 limit = (n != 0) ? n - 1: 0;
 
@@ -236,4 +236,10 @@ i32 strcmp(const char *s1, const char *s2) {
         ++s2;
     };
     return *(const unsigned char *)s1 - *(const unsigned char *)s2;
+}
+
+u32 strlen(const char * str) {
+    u32 len = 0;
+    while(*str++) len++;
+    return len;
 }
