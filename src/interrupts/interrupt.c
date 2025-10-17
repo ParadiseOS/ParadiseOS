@@ -5,7 +5,7 @@
 #include "lib/error.h"
 #include "lib/util.h"
 #include "process/processes.h"
-#include "terminal/terminal.h"
+#include "lib/logging.h"
 
 extern u32 cpu_interrupts;
 
@@ -207,7 +207,8 @@ static void report_page_fault(InterruptRegisters *regs) {
     u32 eip = regs->eip;
     i32 pid = current ? GET_PID(current) : -1;
 
-    terminal_printf(
+    printk(
+        DEBUG,
         "\t%s of address %p at %p in \n"
         "\t%s mode in pid %i was in a %s page\n",
         access_type, addr, eip, mode, pid, page_status
@@ -224,7 +225,7 @@ void isr_handler(InterruptRegisters *regs) {
     if (interrupt >= 32)
         irq_handler(regs);
     else {
-        terminal_printf("[INT] %s\n", INTERRUPT_NAMES[interrupt]);
+        printk(DEBUG, "[INT] %s\n", INTERRUPT_NAMES[interrupt]);
         switch (interrupt) {
         case INT_PAGE_FAULT:
             report_page_fault(regs);

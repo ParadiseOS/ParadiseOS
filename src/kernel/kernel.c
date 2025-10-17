@@ -11,6 +11,8 @@
 #include "sun/sun.h"
 #include "terminal/terminal.h"
 #include "tests/testing.h"
+#include "lib/strings.h"
+#include "lib/logging.h"
 
 const u32 kernel_start_paddr = (u32) &_kernel_start_paddr;
 const void *kernel_start_vaddr = &_kernel_start_vaddr;
@@ -24,6 +26,17 @@ void kernel_main(void) {
         kernel_panic();
     }
 
+    set_loglevel(DEBUG); // Default Log level for now
+    #ifdef LOG_DEBUG
+    set_loglevel(DEBUG);
+    #endif
+    #ifdef LOG_INFO
+    set_loglevel(INFO);
+    #endif
+    #ifdef LOG_CRITICAL
+    set_loglevel(INFO);
+    #endif
+
     terminal_init(
         multiboot_info->framebuffer_width, multiboot_info->framebuffer_height,
         (u16 *) multiboot_info->framebuffer_addr_lo
@@ -31,35 +44,36 @@ void kernel_main(void) {
 
     KERNEL_ASSERT(multiboot_info->framebuffer_addr_hi == 0);
 
-    terminal_printf(
+    printk( 
+        DEBUG,
         "Kernel Size: %u KB\n", (kernel_end_paddr - kernel_start_paddr) / 1024
     );
 
-    terminal_printf("Initializing GDT...\n");
+    printk(DEBUG, "Initializing GDT...\n");
     init_gdt();
 
-    terminal_printf("Initializing IDT...\n");
+    printk(DEBUG, "Initializing IDT...\n");
     init_idt();
 
-    terminal_printf("Initializing TSS...\n");
+    printk(DEBUG, "Initializing TSS...\n");
     init_tss();
 
-    terminal_printf("Initializing FPU...\n");
+    printk(DEBUG, "Initializing FPU...\n");
     init_fpu();
 
-    terminal_printf("Initializing memory...\n");
+    printk(DEBUG, "Initializing memory...\n");
     mem_init();
 
-    terminal_printf("Initializing timer\n");
+    printk(DEBUG, "Initializing timer\n");
     init_timer();
 
-    terminal_printf("Initializing keyboard\n");
+    printk(DEBUG, "Initializing keyboard\n");
     init_keyboard();
 
-    terminal_printf("Initializing serial io...\n");
+    printk(DEBUG, "Initializing serial io...\n");
     serial_init();
 
-    terminal_printf("Initializing the sun...\n");
+    printk(DEBUG, "Initializing the sun...\n");
     sun_init();
 
 #ifdef TESTS_ENABLED // Test Flag should be passed to build script

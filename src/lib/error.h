@@ -1,7 +1,7 @@
 #ifndef ERROR_H_
 #define ERROR_H_
 
-#include "terminal/terminal.h"
+#include "lib/logging.h"
 
 /**
  *  Assert that some condition holds. Log and panic otherwise. Note that logging
@@ -10,7 +10,8 @@
 #define KERNEL_ASSERT(condition)                                               \
     do {                                                                       \
         if (!(condition)) {                                                    \
-            terminal_printf(                                                   \
+            printk(                                                            \
+                CRITICAL,                                                      \
                 __FILE__ ":%u Assertion Failed: " #condition, __LINE__         \
             );                                                                 \
             kernel_panic();                                                    \

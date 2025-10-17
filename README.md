@@ -22,6 +22,7 @@ To build libp for use with programs add flag `--libp` or `-l`
 
 ``` sh
 qemu-system-i386 -cdrom build/paradise-os.iso
+qemu-system-i386 build/paradise-os.iso -serial file:logging/log_$(date +%Y-%m-%d_%H-%M-%S).log #With logging
 ```
 
 **Debugging the OS**

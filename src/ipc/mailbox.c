@@ -2,6 +2,7 @@
 #include "lib/error.h"
 #include "lib/libp.h"
 #include "memory/mem.h"
+#include "lib/logging.h"
 
 void *page_ptr(void *addr) {
     return (void *) ((u32) addr / PAGE_SIZE * PAGE_SIZE);
@@ -79,7 +80,7 @@ int receive_message(Mailbox *mailbox, MailboxMessage *message) {
 
     // Resize mailbox if message is too large
     if (mailbox->size + message_size + 3 > mailbox->capacity) {
-        terminal_printf("mailbox size - %i\n", mailbox->size);
+        printk(DEBUG, "mailbox size - %i\n", mailbox->size);
         int growth_status = mailbox_grow(mailbox);
         if (growth_status)
             return 1; // Mailbox is at max capacity. This will eventually be
