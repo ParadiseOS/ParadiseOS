@@ -26,12 +26,12 @@ void printk(LogLevel lvl, const char * fmt, ...) {
     va_copy(args_copy, args);
 
     u32 len        = vsnprintf(NULL, 0, fmt, args_copy);
-    u32 prefix_len = snprintf(NULL, 0, "<%s>: ", LEVELS[LOGLEVEL]);
+    u32 prefix_len = snprintf(NULL, 0, "<%s>: ", LEVELS[lvl]);
     u32 total_len  = prefix_len + len + 1;
 
     char buffer[total_len];
 
-    snprintf(buffer, total_len, "<%s>: ", LEVELS[LOGLEVEL]);
+    snprintf(buffer, total_len, "<%s>: ", LEVELS[lvl]);
     vsnprintf(buffer+prefix_len, total_len-prefix_len, fmt, args);
 
     char *str = (char *)buffer;
