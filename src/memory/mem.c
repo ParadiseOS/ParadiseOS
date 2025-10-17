@@ -7,7 +7,7 @@
 #include "memory/heap.h"
 #include "process/processes.h"
 #include "syscall/syscall.h"
-#include "terminal/terminal.h"
+#include "lib/logging.h"
 
 #define LOWER_MEM_PAGE_COUNT  256
 #define MAX_KERNEL_PAGE_COUNT 0x300 // last 3/4 of page table
@@ -140,7 +140,7 @@ u32 alloc_frame() {
 }
 
 void print_frame_usage() {
-    terminal_printf("Usage: %u/%u\n", used_frames, total_frames);
+    printk(INFO, "Usage: %u/%u\n", used_frames, total_frames);
 }
 
 // Maps a page in virtual memory. Does not back it with a physical address.

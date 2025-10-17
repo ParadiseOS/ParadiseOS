@@ -12,7 +12,7 @@
 #include "process/rb_tree.h"
 #include "sun/sun.h"
 #include "syscall/syscall.h"
-#include "terminal/terminal.h"
+#include "lib/logging.h"
 
 #define STACK_SIZE   (4 * PAGE_SIZE)
 #define STACK_TOP    ((void *) 0xbfc00000)
@@ -160,7 +160,7 @@ static void save_context_syscall(CpuContext *ctx) {
 void syscall_handler(CpuContext *ctx) {
     current_ctx = ctx;
     if (!dispatch_syscall(ctx))
-        terminal_printf("Unknown syscall :(\n");
+        printk(DEBUG, "Unknown syscall :(\n");
     current_ctx = NULL;
 }
 

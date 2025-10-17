@@ -5,6 +5,7 @@
 TESTS_ENABLED=false
 BUILD_PROGRAMS=false
 LIBP=false
+LOG_LEVEL=""
 
 ### Arguments Checker
 
@@ -17,6 +18,16 @@ do
         BUILD_PROGRAMS=true ;;
     -l|--libp)
         LIBP=true ;;
+	-L|--Log)
+            # Check if the next argument exists and is not another option flag
+			if [ -n "$2" ] && ! expr "$2" : '-.*' > /dev/null; then
+                LOG_LEVEL="$2"
+                shift # Consume the value, in addition to the key
+            else
+                echo "Error: --Log option requires a level (e.g., INFO, DEBUG, CRITICAL)."
+                exit 1
+            fi
+            ;;
     *)
         echo "Invalid option: $1"
         exit 1 ;;
@@ -34,6 +45,30 @@ if [ "$TESTS_ENABLED" = true ]; then
     TESTS_FLAG="-DTESTS_ENABLED"
 else
     TESTS_FLAG=""
+fi
+
+
+LOGGING_FLAG=""
+
+if [ -n "$LOG_LEVEL" ]; then
+    # 1. Convert LOG_LEVEL to all caps
+	LOG_LEVEL_UPPER=$(echo "$LOG_LEVEL" | tr '[:lower:]' '[:upper:]')
+
+    # 2. Convert the uppercase string to the desired compiler flag
+    case "$LOG_LEVEL_UPPER" in
+        "INFO")
+            LOGGING_FLAG="-DLOG_INFO"
+            ;;
+        "DEBUG")
+            LOGGING_FLAG="-DLOG_DEBUG"
+            ;;
+        "CRITICAL")
+            LOGGING_FLAG="-DLOG_CRITICAL"
+            ;;
+        *)
+            echo "Warning: Invalid log level '$LOG_LEVEL'. No log flag will be set."
+            ;;
+    esac
 fi
 
 if [ "$LIBP" = true ]; then
@@ -66,7 +101,7 @@ printf -- "---------------------------------------\n"
 
 find src -type f -name "*.c" | while read -r file; do
     output="bin/$(basename -s .c "$file").o"
-    i686-elf-gcc -c "$file" -o "$output" -std=gnu99 -ffreestanding -ggdb -masm=intel -Wall -Wextra -Isrc $TESTS_FLAG
+    i686-elf-gcc -c "$file" -o "$output" -std=gnu99 -ffreestanding -ggdb -masm=intel -Wall -Wextra -Isrc $TESTS_FLAG $LOGGING_FLAG
 done
 
 find src -type f -name "*.s" | while read -r file; do

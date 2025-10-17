@@ -3,3 +3,4 @@
 *.sun
 .clangd
 /.vscode
+logging/*
