@@ -82,9 +82,6 @@ void kernel_main(void) {
 
     processes_init();
 
-    // TODO:
-    // -L To set the Log level
-
     // Add your processes here
     // ex. exec_sun("binary.out", 0)
 
