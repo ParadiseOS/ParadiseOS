@@ -1,7 +1,7 @@
-#include "types.h"
+#include "lib/strings.h"
 #include "drivers/serial/io.h"
 #include "lib/util.h"
-#include "lib/strings.h"
+#include "types.h"
 
 #include <stdarg.h>
 
@@ -25,7 +25,8 @@ static u32 snprint_hex(u32 val, u32 n, char *buffer_) {
     int i = 0;
 
     if (val == 0) {
-        if (buffer_ && n > 0) *buffer_ = '0';
+        if (buffer_ && n > 0)
+            *buffer_ = '0';
         return 1;
     }
 
@@ -45,15 +46,18 @@ static u32 snprint_hex(u32 val, u32 n, char *buffer_) {
 }
 
 static u32 snprint_ptr(void *ptr, u32 n, char *buffer_) {
-    u32 val = (u32)(unsigned long)ptr;
-    // Calculate full hex length first, passing a max size to ensure full calculation.
+    u32 val = (u32) (unsigned long) ptr;
+    // Calculate full hex length first, passing a max size to ensure full
+    // calculation.
     u32 hex_len = snprint_hex(val, ~0u, NULL);
     u32 full_len = 2 + hex_len;
 
     if (buffer_) {
         u32 written = 0;
-        if (written < n) buffer_[written++] = '0';
-        if (written < n) buffer_[written++] = 'x';
+        if (written < n)
+            buffer_[written++] = '0';
+        if (written < n)
+            buffer_[written++] = 'x';
 
         if (n > written) {
             snprint_hex(val, n - written, buffer_ + written);
@@ -64,7 +68,8 @@ static u32 snprint_ptr(void *ptr, u32 n, char *buffer_) {
 
 static u32 snprint_bin(u32 val, u32 n, char *buffer_) {
     if (val == 0) {
-        if (buffer_ && n > 0) *buffer_ = '0';
+        if (buffer_ && n > 0)
+            *buffer_ = '0';
         return 1;
     }
 
@@ -90,14 +95,15 @@ static u32 snprint_int(u32 val, bool is_signed, u32 n, char *buffer_) {
     int i = 0;
     bool is_negative = false;
 
-    if (is_signed && (i32)val < 0) {
-        val = -(i32)val;
+    if (is_signed && (i32) val < 0) {
+        val = -(i32) val;
         is_negative = true;
     }
 
     if (val == 0) {
         temp_buffer[i++] = '0';
-    } else {
+    }
+    else {
         while (val) {
             temp_buffer[i++] = (val % 10) + '0';
             val /= 10;
@@ -125,12 +131,15 @@ static u32 snprint_float(f64 val, u32 precision, u32 n, char *buffer_) {
     char *p = temp_buf;
     u32 len = 0;
 
-    if (val != val) return snprint_string("nan", n, buffer_);
+    if (val != val)
+        return snprint_string("nan", n, buffer_);
     if (val == INFINITY || val == -INFINITY) {
-        if (val < 0) *p++ = '-';
+        if (val < 0)
+            *p++ = '-';
         // A bit of manual string copy
         const char *inf = "inf";
-        while(*inf) *p++ = *inf++;
+        while (*inf)
+            *p++ = *inf++;
         *p = '\0';
         return snprint_string(temp_buf, n, buffer_);
     }
@@ -140,17 +149,20 @@ static u32 snprint_float(f64 val, u32 precision, u32 n, char *buffer_) {
         val = -val;
     }
 
-    u32 integer_part = (u32)val;
-    len = snprint_int(integer_part, false, sizeof(temp_buf) - (p - temp_buf), p);
+    u32 integer_part = (u32) val;
+    len =
+        snprint_int(integer_part, false, sizeof(temp_buf) - (p - temp_buf), p);
     p += len;
 
     if (precision > 0) {
         *p++ = '.';
-        f64 frac_part = val - (f64)integer_part;
+        f64 frac_part = val - (f64) integer_part;
         for (u32 i = 0; i < precision; ++i) {
             frac_part *= 10.0;
         }
-        len = snprint_int((u32)(frac_part + 0.5), false, sizeof(temp_buf) - (p - temp_buf), p);
+        len = snprint_int(
+            (u32) (frac_part + 0.5), false, sizeof(temp_buf) - (p - temp_buf), p
+        );
         p += len;
     }
     *p = '\0';
@@ -167,15 +179,14 @@ u32 snprintf(char *buffer, u32 n, const char *fmt, ...) {
 u32 vsnprintf(char *buffer, u32 n, const char *fmt, va_list args) {
     u32 current_length = 0;
 
-    u32 limit = (n != 0) ? n - 1: 0;
+    u32 limit = (n != 0) ? n - 1 : 0;
 
     for (; *fmt; ++fmt) {
         u32 remaining = (current_length > limit) ? 0 : limit - current_length;
 
-
         // current_pos is NULL if we have no buffer or are out of space.
         char *current_pos = buffer ? buffer + current_length : NULL;
-        if ((u32)current_length >= limit) {
+        if ((u32) current_length >= limit) {
             current_pos = NULL;
         }
 
@@ -184,37 +195,68 @@ u32 vsnprintf(char *buffer, u32 n, const char *fmt, va_list args) {
         if (*fmt == '%') {
             fmt++;
             switch (*fmt) {
-                case 'u': segment_len = snprint_int(va_arg(args, u32), false, remaining, current_pos); break;
-                case 'i': segment_len = snprint_int(va_arg(args, u32), true, remaining, current_pos); break;
-                case 'f': segment_len = snprint_float(va_arg(args, f64), 6, remaining, current_pos); break;
-                case 'x': segment_len = snprint_hex(va_arg(args, u32), remaining, current_pos); break;
-                case 'p': segment_len = snprint_ptr(va_arg(args, void *), remaining, current_pos); break;
-                case 'b': segment_len = snprint_bin(va_arg(args, u32), remaining, current_pos); break;
-                case 's': segment_len = snprint_string(va_arg(args, char *), remaining, current_pos); break;
-                case 'c':
-                    if (current_pos) *current_pos = (char)va_arg(args, int);
-                    segment_len = 1;
-                    break;
-                case '%':
-                    if (current_pos) *current_pos = '%';
-                    segment_len = 1;
-                    break;
-                case '.': {
-                    u32 precision = 0;
-                    while (*(fmt + 1) >= '0' && *(fmt + 1) <= '9') {
-                        fmt++;
-                        precision = precision * 10 + (*fmt - '0');
-                    }
-                    if (*(fmt + 1) == 'f') {
-                        fmt++;
-                        segment_len = snprint_float(va_arg(args, f64), precision, remaining, current_pos);
-                    }
-                    break;
+            case 'u':
+                segment_len = snprint_int(
+                    va_arg(args, u32), false, remaining, current_pos
+                );
+                break;
+            case 'i':
+                segment_len = snprint_int(
+                    va_arg(args, u32), true, remaining, current_pos
+                );
+                break;
+            case 'f':
+                segment_len =
+                    snprint_float(va_arg(args, f64), 6, remaining, current_pos);
+                break;
+            case 'x':
+                segment_len =
+                    snprint_hex(va_arg(args, u32), remaining, current_pos);
+                break;
+            case 'p':
+                segment_len =
+                    snprint_ptr(va_arg(args, void *), remaining, current_pos);
+                break;
+            case 'b':
+                segment_len =
+                    snprint_bin(va_arg(args, u32), remaining, current_pos);
+                break;
+            case 's':
+                segment_len = snprint_string(
+                    va_arg(args, char *), remaining, current_pos
+                );
+                break;
+            case 'c':
+                if (current_pos)
+                    *current_pos = (char) va_arg(args, int);
+                segment_len = 1;
+                break;
+            case '%':
+                if (current_pos)
+                    *current_pos = '%';
+                segment_len = 1;
+                break;
+            case '.': {
+                u32 precision = 0;
+                while (*(fmt + 1) >= '0' && *(fmt + 1) <= '9') {
+                    fmt++;
+                    precision = precision * 10 + (*fmt - '0');
                 }
-                default: break;
+                if (*(fmt + 1) == 'f') {
+                    fmt++;
+                    segment_len = snprint_float(
+                        va_arg(args, f64), precision, remaining, current_pos
+                    );
+                }
+                break;
             }
-        } else {
-            if (current_pos) *current_pos = *fmt;
+            default:
+                break;
+            }
+        }
+        else {
+            if (current_pos)
+                *current_pos = *fmt;
             segment_len = 1;
         }
         current_length += segment_len;
@@ -223,7 +265,8 @@ u32 vsnprintf(char *buffer, u32 n, const char *fmt, va_list args) {
     va_end(args);
 
     if (buffer && n > 0) {
-        u32 final_pos = ((u32)current_length < limit) ? (u32)current_length : limit;
+        u32 final_pos =
+            ((u32) current_length < limit) ? (u32) current_length : limit;
         buffer[final_pos] = '\0';
     }
 
@@ -235,11 +278,12 @@ i32 strcmp(const char *s1, const char *s2) {
         ++s1;
         ++s2;
     };
-    return *(const unsigned char *)s1 - *(const unsigned char *)s2;
+    return *(const unsigned char *) s1 - *(const unsigned char *) s2;
 }
 
-u32 strlen(const char * str) {
+u32 strlen(const char *str) {
     u32 len = 0;
-    while(*str++) len++;
+    while (*str++)
+        len++;
     return len;
 }

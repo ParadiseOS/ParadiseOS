@@ -19,10 +19,9 @@ do
     -l|--libp)
         LIBP=true ;;
 	-L|--Log)
-            # Check if the next argument exists and is not another option flag
 			if [ -n "$2" ] && ! expr "$2" : '-.*' > /dev/null; then
                 LOG_LEVEL="$2"
-                shift # Consume the value, in addition to the key
+                shift 
             else
                 echo "Error: --Log option requires a level (e.g., INFO, DEBUG, CRITICAL)."
                 exit 1
@@ -51,10 +50,8 @@ fi
 LOGGING_FLAG=""
 
 if [ -n "$LOG_LEVEL" ]; then
-    # 1. Convert LOG_LEVEL to all caps
 	LOG_LEVEL_UPPER=$(echo "$LOG_LEVEL" | tr '[:lower:]' '[:upper:]')
 
-    # 2. Convert the uppercase string to the desired compiler flag
     case "$LOG_LEVEL_UPPER" in
         "INFO")
             LOGGING_FLAG="-DLOG_INFO"

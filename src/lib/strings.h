@@ -1,9 +1,8 @@
 #ifndef STRINGS_H_
 #define STRINGS_H_
 
+#include "types.h"
 #include <stdarg.h>
-#include "types.h" // For u32, etc.
-
 
 /**
  * @brief Writes a formatted string to a buffer, ensuring not to write more
@@ -41,7 +40,7 @@ u32 vsnprintf(char *buffer, u32 n, const char *fmt, va_list args);
  * @return ret < 0 if s1 < s2, ret > 0 if s1 > s2 else ret = 0 (s1 = s2)
  * UNDEFINED for NULL s1, s2
  */
-i32 strcmp(const char *s1, const char* s2);
+i32 strcmp(const char *s1, const char *s2);
 
 /**
  * @brief Returns length of a string
@@ -50,8 +49,6 @@ i32 strcmp(const char *s1, const char* s2);
  * @return length of string
  * UNDEFINED for NULL
  */
-u32 strlen(const char * str);
-
-
+u32 strlen(const char *str);
 
 #endif // STRINGS_H_
