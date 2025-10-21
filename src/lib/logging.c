@@ -1,41 +1,46 @@
-#include <stdarg.h>
-#include "types.h"
 #include "logging.h"
+#include "drivers/serial/io.h"
 #include "lib/strings.h"
 #include "terminal/terminal.h"
-#include "drivers/serial/io.h"
+#include "types.h"
+#include <stdarg.h>
 
+#define MAX_LOG_LENGTH 8192
+
+#ifdef LOG_DEBUG
+static LogLevel LOGLEVEL = DEBUG;
+#endif
+
+#ifdef LOG_INFO
 static LogLevel LOGLEVEL = INFO;
+#endif
 
-static char *LEVELS[] = {
-    "CRITICAL",
-    "INFO",
-    "DEBUG"
-};
+#ifdef LOG_CRITICAL
+static LogLevel LOGLEVEL = CRITICAL;
+#endif
+
+static char LOG_BUFFER[MAX_LOG_LENGTH];
+
+static char *LEVELS[] = {"CRITICAL", "INFO", "DEBUG"};
 
 void set_loglevel(LogLevel lvl) {
     LOGLEVEL = lvl;
 }
 
-void printk(LogLevel lvl, const char * fmt, ...) {
-    if (lvl > LOGLEVEL) return;
+void printk(LogLevel lvl, const char *fmt, ...) {
+    if (lvl > LOGLEVEL)
+        return;
 
     va_list args;
-    va_list args_copy;
     va_start(args, fmt);
-    va_copy(args_copy, args);
 
-    u32 len        = vsnprintf(NULL, 0, fmt, args_copy);
     u32 prefix_len = snprintf(NULL, 0, "<%s>: ", LEVELS[lvl]);
-    u32 total_len  = prefix_len + len + 1;
 
-    char buffer[total_len];
+    snprintf(LOG_BUFFER, MAX_LOG_LENGTH, "<%s>: ", LEVELS[lvl]);
+    vsnprintf(LOG_BUFFER + prefix_len, MAX_LOG_LENGTH - prefix_len, fmt, args);
 
-    snprintf(buffer, total_len, "<%s>: ", LEVELS[lvl]);
-    vsnprintf(buffer+prefix_len, total_len-prefix_len, fmt, args);
-
-    char *str = (char *)buffer;
-    while(*str){
+    char *str = (char *) LOG_BUFFER;
+    while (*str) {
         terminal_putchar(*str);
         serial_write(*str);
         ++str;

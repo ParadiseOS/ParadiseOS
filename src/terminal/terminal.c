@@ -1,9 +1,9 @@
 #include "terminal.h"
 #include "drivers/serial/io.h"
+#include "lib/strings.h"
 #include "lib/util.h"
 #include "syscall/syscall.h"
 #include <stdarg.h>
-#include "lib/strings.h"
 
 Terminal terminal;
 
@@ -49,8 +49,6 @@ void terminal_backspace() {
 }
 
 void terminal_putchar(u8 c) {
-    //serial_write(c);
-
     if (c == '\n') {
         terminal.col = 0;
 
@@ -94,7 +92,7 @@ void terminal_print_string(const char *string) {
     }
 }
 
-//Use sprintf
+// Use sprintf
 void terminal_printf(const char *fmt, ...) {
     va_list args;
     va_list args_copy;
@@ -103,8 +101,8 @@ void terminal_printf(const char *fmt, ...) {
     va_copy(args_copy, args);
 
     u32 length = vsnprintf(NULL, 0, fmt, args_copy);
-    char buffer[length+1];
-    vsnprintf(buffer, length+1, fmt, args);
+    char buffer[length + 1];
+    vsnprintf(buffer, length + 1, fmt, args);
     terminal_print_string(buffer);
 }
 

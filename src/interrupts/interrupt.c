@@ -3,9 +3,9 @@
 #include "kernel/init.h"
 #include "kernel/kernel.h"
 #include "lib/error.h"
+#include "lib/logging.h"
 #include "lib/util.h"
 #include "process/processes.h"
-#include "lib/logging.h"
 
 extern u32 cpu_interrupts;
 
