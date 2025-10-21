@@ -4,6 +4,10 @@
 #include "types.h"
 #include <stdarg.h>
 
+#define STRING_BUFFER_LENGTH 8192
+// Buffer for erraneous string operations
+extern char temp_string_buffer[STRING_BUFFER_LENGTH];
+
 /**
  * @brief Writes a formatted string to a buffer, ensuring not to write more
  * than n characters (including the null terminator).
