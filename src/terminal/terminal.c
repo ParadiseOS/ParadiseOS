@@ -95,15 +95,10 @@ void terminal_print_string(const char *string) {
 // Use sprintf
 void terminal_printf(const char *fmt, ...) {
     va_list args;
-    va_list args_copy;
 
     va_start(args, fmt);
-    va_copy(args_copy, args);
-
-    u32 length = vsnprintf(NULL, 0, fmt, args_copy);
-    char buffer[length + 1];
-    vsnprintf(buffer, length + 1, fmt, args);
-    terminal_print_string(buffer);
+    vsnprintf(temp_string_buffer, STRING_BUFFER_LENGTH, fmt, args);
+    terminal_print_string(temp_string_buffer);
 }
 
 SyscallResult syscall_print_slice_string(char *s, u32 n) {

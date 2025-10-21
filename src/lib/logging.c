@@ -5,7 +5,7 @@
 #include "types.h"
 #include <stdarg.h>
 
-#define MAX_LOG_LENGTH 8192
+static LogLevel LOGLEVEL = DEBUG;
 
 #ifdef LOG_DEBUG
 static LogLevel LOGLEVEL = DEBUG;
@@ -19,9 +19,11 @@ static LogLevel LOGLEVEL = INFO;
 static LogLevel LOGLEVEL = CRITICAL;
 #endif
 
-static char LOG_BUFFER[MAX_LOG_LENGTH];
-
-static char *LEVELS[] = {"CRITICAL", "INFO", "DEBUG"};
+static char *LEVELS[] = {
+    "CRITICAL",
+    "INFO",
+    "DEBUG",
+};
 
 void set_loglevel(LogLevel lvl) {
     LOGLEVEL = lvl;
@@ -36,10 +38,13 @@ void printk(LogLevel lvl, const char *fmt, ...) {
 
     u32 prefix_len = snprintf(NULL, 0, "<%s>: ", LEVELS[lvl]);
 
-    snprintf(LOG_BUFFER, MAX_LOG_LENGTH, "<%s>: ", LEVELS[lvl]);
-    vsnprintf(LOG_BUFFER + prefix_len, MAX_LOG_LENGTH - prefix_len, fmt, args);
+    snprintf(temp_string_buffer, STRING_BUFFER_LENGTH, "<%s>: ", LEVELS[lvl]);
+    vsnprintf(
+        temp_string_buffer + prefix_len, STRING_BUFFER_LENGTH - prefix_len, fmt,
+        args
+    );
 
-    char *str = (char *) LOG_BUFFER;
+    char *str = (char *) temp_string_buffer;
     while (*str) {
         terminal_putchar(*str);
         serial_write(*str);

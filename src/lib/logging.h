@@ -1,7 +1,11 @@
 #ifndef LOGGING_H_
 #define LOGGING_H_
 
-typedef enum { CRITICAL = 0, INFO = 1, DEBUG = 2 } LogLevel;
+typedef enum {
+    CRITICAL = 0,
+    INFO = 1,
+    DEBUG = 2,
+} LogLevel;
 
 /**
  * @brief Sets the loglevel fro the terminal (LOWER ~ HIGHER PRECIDENCE NEEDED)
