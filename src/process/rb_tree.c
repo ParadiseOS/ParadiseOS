@@ -117,7 +117,7 @@ void rb_init(RbTree *tree) {
     tree->count = 0;
 }
 
-bool rb_insert(RbTree *tree, RbNode *node, u16 key) {
+bool rb_insert(RbTree *tree, RbNode *node, u32 key) {
     RbNode *loc = tree->root;
     RbNode *parent = &tree->nil;
     u8 dir;
@@ -146,7 +146,7 @@ bool rb_insert(RbTree *tree, RbNode *node, u16 key) {
     return true;
 }
 
-RbNode *rb_remove(RbTree *tree, u16 key) {
+RbNode *rb_remove(RbTree *tree, u32 key) {
     RbNode *node = rb_find(tree, key);
 
     if (!node)
@@ -188,7 +188,7 @@ RbNode *rb_remove(RbTree *tree, u16 key) {
     return node;
 }
 
-RbNode *rb_find(RbTree *tree, u16 key) {
+RbNode *rb_find(RbTree *tree, u32 key) {
     RbNode *node = tree->root;
 
     while (!NIL(node)) {
