@@ -14,7 +14,7 @@ struct RbNode_ {
 
         RbNode *child[2];
     };
-    u16 key;
+    u32 key;
     u8 color;
 };
 
@@ -32,7 +32,7 @@ void rb_init(RbTree *tree);
 // Returns whether or not the insertion occurred. Insertion occurs if and only
 // if the key does not already exist.
 bool rb_insert(RbTree *tree, RbNode *node, u16 key);
-RbNode *rb_find(RbTree *tree, u16 key);
-RbNode *rb_remove(RbTree *tree, u16 key);
+RbNode *rb_find(RbTree *tree, u32 key);
+RbNode *rb_remove(RbTree *tree, u32 key);
 
 #endif // RB_TREE_H_
