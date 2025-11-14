@@ -4,7 +4,7 @@
 
 #define NUM_SYSCALLS 16
 
-void *syscall_table[NUM_SYSCALLS] = { NULL };
+void *syscall_table[NUM_SYSCALLS] = {NULL};
 
 typedef SyscallResult (*Syscall)(u32 a, u32 b, u32 c, u32 d, u32 e);
 
@@ -38,4 +38,12 @@ void *delete_syscall(u32 num) {
     KERNEL_ASSERT(syscall);
     syscall_table[num] = NULL;
     return syscall;
+}
+
+SyscallResult syscall_debug() {
+    SYSCALL_RETURN(0, 0);
+}
+
+void syscalls_init() {
+    register_syscall(15, syscall_debug);
 }

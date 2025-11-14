@@ -11,8 +11,8 @@
     do {                                                                       \
         if (!(condition)) {                                                    \
             printk(                                                            \
-                CRITICAL,                                                      \
-                __FILE__ ":%u Assertion Failed: " #condition, __LINE__         \
+                CRITICAL, __FILE__ ":%u Assertion Failed: " #condition,        \
+                __LINE__                                                       \
             );                                                                 \
             kernel_panic();                                                    \
         }                                                                      \

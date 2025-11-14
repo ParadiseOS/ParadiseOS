@@ -16,13 +16,13 @@ flush_tlb:
     mov cr3, eax
     ret
 
-public load_page_dir
-load_page_dir:
-    mov eax, [esp+0x04]
-    mov cr3, eax
+public get_cr3
+get_cr3:
+    mov eax, cr3
     ret
 
-public get_page_dir_paddr
-get_page_dir_paddr:
-    mov eax, cr3
+public set_cr3
+set_cr3:
+    mov eax, [esp+0x04]
+    mov cr3, eax
     ret

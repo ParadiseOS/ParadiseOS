@@ -11,6 +11,7 @@
 #include "memory/mem.h"
 #include "process/processes.h"
 #include "sun/sun.h"
+#include "syscall/syscall.h"
 #include "terminal/terminal.h"
 #include "tests/testing.h"
 
@@ -69,6 +70,7 @@ void kernel_main(void) {
     kernel_test();
 #endif
 
+    syscalls_init();
     processes_init();
 
     // Add your processes here

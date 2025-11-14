@@ -82,14 +82,14 @@ void heap_mark_used(Heap *heap, u32 start, u32 space) {
     }
 }
 
-void heap_init(Heap *heap, void *heap_start, u32 page_count) {
+void heap_init(Heap *heap, void *heap_start, u32 page_count, u16 flags) {
     KERNEL_ASSERT(is_page_aligned(heap_start));
 
     // size of our usage map
     u32 byte_size = (page_count + 3) / 4;
     u32 page_size = size_in_pages(byte_size);
 
-    alloc_pages(heap_start, PAGE_WRITABLE, page_size);
+    alloc_pages(heap_start, flags, page_size);
     pmemset(heap_start, HEAP_PAGE_FREE, byte_size);
 
     heap->usage_map = heap_start;

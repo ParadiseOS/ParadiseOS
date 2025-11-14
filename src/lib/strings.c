@@ -4,7 +4,6 @@
 #include "types.h"
 #include <stdarg.h>
 
-char temp_string_buffer[STRING_BUFFER_LENGTH];
 static const char HEX_DIGITS[] = "0123456789ABCDEF";
 
 static u32 snprint_string(const char *str, u32 n, char *buffer_) {

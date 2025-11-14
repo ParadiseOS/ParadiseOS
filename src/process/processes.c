@@ -5,6 +5,7 @@
 #include "kernel/kernel.h"
 #include "lib/error.h"
 #include "lib/libp.h"
+#include "lib/logging.h"
 #include "memory/heap.h"
 #include "memory/mem.h"
 #include "process/pool.h"
@@ -12,7 +13,6 @@
 #include "process/rb_tree.h"
 #include "sun/sun.h"
 #include "syscall/syscall.h"
-#include "lib/logging.h"
 
 #define STACK_SIZE   (4 * PAGE_SIZE)
 #define STACK_TOP    ((void *) 0xbfc00000)
@@ -76,7 +76,7 @@ static u16 next_free_pid() {
 void exec_sun(const char *name, int arg) {
     TableEntry *entry = sun_exe_lookup(name);
 
-    KERNEL_ASSERT(entry->text_size);
+    KERNEL_ASSERT(entry && entry->text_size);
 
     void *text = PROCESS_ORG;
     void *rodata = align_next_page(text + entry->text_size - 1);
@@ -87,8 +87,9 @@ void exec_sun(const char *name, int arg) {
 
     u32 heap_pages = ((u32) STACK_TOP - (u32) heap) / PAGE_SIZE;
 
+    u32 old_page_dir = get_page_dir();
     u32 page_dir = new_page_dir();
-    load_page_dir(page_dir);
+    set_page_dir(page_dir);
 
     alloc_pages(text, RO_FLAGS, (rodata - text) / PAGE_SIZE);
     if (entry->rodata_size)
@@ -116,9 +117,9 @@ void exec_sun(const char *name, int arg) {
 
     pmemset(pcb->fpu_regs, 0, /*fpu_regs size*/ 512);
 
-    heap_init(&pcb->heap, heap, heap_pages);
+    heap_init(&pcb->heap, heap, heap_pages, PAGE_WRITABLE | PAGE_USER_MODE);
 
-    load_page_dir(kernel_page_dir);
+    set_page_dir(old_page_dir);
 
     u16 pid = next_free_pid();
     Process *p = pool_create(&process_pool);
@@ -132,7 +133,7 @@ void schedule() {
     current = run_queue_next();
     KERNEL_ASSERT(current);
 
-    load_page_dir(current->page_dir_paddr);
+    set_page_dir(current->page_dir_paddr);
     KERNEL_ASSERT(pcb->page_dir_paddr == current->page_dir_paddr);
     fpu_restore(pcb->fpu_regs);
     jump_usermode((void (*)()) pcb->eip, (void *) pcb->esp, pcb);
@@ -191,7 +192,7 @@ SyscallResult syscall_send_message(u32 pid, u32 len, char *data) {
     // Switch address space
     Process *dst = get_process(pid);
     KERNEL_ASSERT(dst);
-    load_page_dir(dst->page_dir_paddr);
+    set_page_dir(dst->page_dir_paddr);
 
     // Send message to mailbox
     send_message(mailbox, org_pid, message_size, message_cpy);
@@ -204,7 +205,7 @@ SyscallResult syscall_send_message(u32 pid, u32 len, char *data) {
     }
 
     // Switch back address space
-    load_page_dir(current->page_dir_paddr);
+    set_page_dir(current->page_dir_paddr);
     SYSCALL_RETURN(0, 0);
 }
 
