@@ -12,10 +12,10 @@
 #define PAGE_WRITABLE  2   // Can user write?
 #define PAGE_GLOBAL    512 // Flush from TLB on CR3 reload?
 
-extern u32 kernel_page_dir;
-
-extern void load_page_dir(u32 paddr);
-extern u32 get_page_dir_paddr();
+typedef struct {
+    u32 addr;
+    u32 len;
+} PhysicalMap;
 
 extern void fpu_save(void *fpu_regs);
 extern void fpu_restore(void *fpu_regs);
@@ -23,6 +23,10 @@ extern void fpu_restore(void *fpu_regs);
 u32 get_paddr(u32 entry);
 u32 get_entry(void *vaddr);
 u16 get_flags(u32 entry);
+void set_page_dir(u32 paddr);
+u32 get_page_dir();
+
+bool entry_present(u32 entry);
 
 u32 size_in_pages(u32 size_in_bytes);
 u32 align_next_frame(u32 paddr);
@@ -47,7 +51,7 @@ void free_pages(void *vaddr, u32 count);
 // Reclaims a frame of physical memory.
 void free_frame(u32 paddr);
 
-void *mem_alloc(Heap *heap, u32 pages);
+void *mem_alloc(Heap *heap, u32 pages, u16 flags);
 void *mem_realloc(Heap *heap, void *ptr, u32 pages);
 void mem_free(Heap *heap, void *ptr);
 
@@ -56,5 +60,8 @@ void *kernel_realloc(void *ptr, u32 pages);
 void kernel_free(void *ptr);
 
 void debug_heap(u32 pages);
+
+void *validate_user_readable(u32 vaddr);
+void *validate_user_writable(u32 vaddr);
 
 #endif // MEM_H_

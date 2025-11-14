@@ -14,5 +14,6 @@ typedef struct {
 void register_syscall(u32 num, void *syscall);
 bool dispatch_syscall(CpuContext *ctx);
 void *delete_syscall(u32 num);
+void syscalls_init();
 
 #endif // SYSCALL_H_

@@ -98,8 +98,9 @@ void exec_sun(const char *name, int arg) {
     // Process* p = get_process(arg);
     // u32 page_dir = p->page_dir_paddr;
 
+    u32 old_page_dir = get_page_dir();
     u32 page_dir = new_page_dir();
-    load_page_dir(page_dir);
+    set_page_dir(page_dir);
 
     alloc_pages(text, RO_FLAGS, (rodata - text) / PAGE_SIZE);
     if (entry->rodata_size)
@@ -126,10 +127,9 @@ void exec_sun(const char *name, int arg) {
     pmemset(pcb->fpu_regs, 0, /*fpu_regs size*/ 512);
 
     mailbox_init(&pcb->mailbox, mailbox_data, PAGE_WRITABLE);
+    heap_init(&pcb->heap, heap, heap_pages, PAGE_WRITABLE | PAGE_USER_MODE);
 
-    heap_init(&pcb->heap, heap, heap_pages);
-
-    load_page_dir(kernel_page_dir);
+    set_page_dir(old_page_dir);
 
     u32 pid = next_free_aid();
     Process *p = pool_create(&process_pool);
@@ -143,7 +143,7 @@ void schedule() {
     current = run_queue_next();
     KERNEL_ASSERT(current);
 
-    load_page_dir(current->page_dir_paddr);
+    set_page_dir(current->page_dir_paddr);
     KERNEL_ASSERT(pcb->page_dir_paddr == current->page_dir_paddr);
     fpu_restore(pcb->fpu_regs);
     jump_usermode((void (*)()) pcb->eip, (void *) pcb->esp, pcb);
@@ -214,7 +214,7 @@ SyscallResult syscall_send_message(
     // Switch address space
     Process *dst = get_process(reader_pid >> 16);
     KERNEL_ASSERT(dst); // Todo: Turn this into an error
-    load_page_dir(dst->page_dir_paddr);
+    set_page_dir(dst->page_dir_paddr);
 
     if (flags & IPC_SIGNAL) {
         send_signal(message_cpy[0]);
@@ -234,7 +234,7 @@ SyscallResult syscall_send_message(
     // }
 
     // Switch back address space
-    load_page_dir(current->page_dir_paddr);
+    set_page_dir(current->page_dir_paddr);
     SYSCALL_RETURN(0, 0);
 }
 
@@ -264,7 +264,7 @@ SyscallResult syscall_jump_process(u32 pid) {
     Process *proc = get_process(pid);
     if (proc) {
         current = proc;
-        load_page_dir(proc->page_dir_paddr);
+        set_page_dir(proc->page_dir_paddr);
         fpu_restore(pcb->fpu_regs);
         jump_usermode((void (*)()) pcb->eip, (void *) pcb->esp, pcb);
     }

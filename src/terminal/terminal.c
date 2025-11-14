@@ -97,8 +97,8 @@ void terminal_printf(const char *fmt, ...) {
     va_list args;
 
     va_start(args, fmt);
-    vsnprintf(temp_string_buffer, STRING_BUFFER_LENGTH, fmt, args);
-    terminal_print_string(temp_string_buffer);
+    vsnprintf(temp_buffer, TEMP_BUFFER_LENGTH, fmt, args);
+    terminal_print_string(temp_buffer);
 }
 
 SyscallResult syscall_print_slice_string(char *s, u32 n) {

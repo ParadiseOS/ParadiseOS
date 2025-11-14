@@ -9,7 +9,7 @@ typedef struct {
     Process *free_list;
 } ProcessPool;
 
-_Static_assert(sizeof(Process) < PAGE_SIZE, "Process struct too big");
+_Static_assert(sizeof(Process) <= PAGE_SIZE, "Process struct too big");
 
 // Right now the implementation will never decrease its capacity. Memory will
 // still be reused as processes are destroyed.
