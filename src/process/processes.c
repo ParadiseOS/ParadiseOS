@@ -28,7 +28,7 @@ Queue run_queue;
 
 Process *current = NULL;
 CpuContext *current_ctx = NULL;
-u32 pid_counter = 0;
+u32 pid_counter = 1;
 
 ProcessControlBlock *pcb = PCB_ADDR;
 Mailbox *mailbox = MAILBOX_ADDR;
@@ -86,6 +86,7 @@ void exec_sun(const char *name, int arg) {
     void *stack = STACK_TOP;
 
     u32 heap_pages = ((u32) STACK_TOP - (u32) heap) / PAGE_SIZE;
+
 
     u32 page_dir = new_page_dir();
     load_page_dir(page_dir);
@@ -208,8 +209,8 @@ SyscallResult syscall_send_message(u32 pid, u32 len, char *data) {
     SYSCALL_RETURN(0, 0);
 }
 
-SyscallResult register_process() {
-
+SyscallResult syscall_register_process() {
+    printk(DEBUG, "Funcion Called\n");
     u32 pid = next_free_pid();
     u32 page_dir = new_page_dir();
     Process *p = pool_create(&process_pool);
@@ -217,34 +218,35 @@ SyscallResult register_process() {
     p->blocked = false;
     rb_insert(&process_tree, &p->rb_node, pid);
 
-    SYSCALL_RETURN(0, pid);
+    SYSCALL_RETURN(pid, 0);
 }
 
-SyscallResult delete_process(u32 pid) {
+SyscallResult syscall_delete_process(u32 pid) {
     Process * proc = get_process(pid);
-    u32 res = -1;
+    u32 res = 1;
     if (proc){
-        u32 p_addr = p->page_dir_paddr;
+        u32 p_addr = proc->page_dir_paddr;
         free_frame(p_addr);
-        rb_delete(&process_tree, pid);
+        rb_remove(&process_tree, pid);
         pool_destroy(&process_pool, proc);
         res = 0;
     }
 
-    SYSCALL_RETURN(res, 0);
+    SYSCALL_RETURN(0, res);
 }
 
 SyscallResult syscall_jump_process(u32 pid) {
-    u32 res = -1;
+    u32 res = 1;
 
     Process * proc = get_process(pid);
     if (proc) {
+        current = proc;
         load_page_dir(proc->page_dir_paddr);
         fpu_restore(pcb->fpu_regs);
         jump_usermode((void (*)()) pcb->eip, (void *) pcb->esp, pcb);
     }
 
-    SYSCALL_RETURN(res, 0);
+    SYSCALL_RETURN(0, res);
 }
 
 SyscallResult syscall_read_message(char *out, u32 blocking) {
@@ -264,10 +266,11 @@ void processes_init() {
     rb_init(&process_tree);
     queue_init(&run_queue);
 
-    register_syscall(3, syscall_send_message);
-    register_syscall(4, syscall_read_message);
+    register_syscall(0, syscall_send_message);
+    register_syscall(1, syscall_read_message);
 
-    register_syscall(6, syscall_register_process);
-    register_syscall(7, syscall_delete_process);
-    register_syscall(8, syscall_jump_process);
+    register_syscall(2, syscall_register_process);
+    register_syscall(3, syscall_delete_process);
+    register_syscall(4, syscall_jump_process);
+    printk(DEBUG, "syscall_register %p\n", &syscall_register_process);
 }

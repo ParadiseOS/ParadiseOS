@@ -126,6 +126,6 @@ void terminal_init(usize width, usize height, u16 *buffer) {
         terminal.buffer[i] = vga_entry_create(' ', terminal.color);
     }
 
-    register_syscall(1, syscall_print_slice_string);
-    register_syscall(2, syscall_print_string);
+    register_syscall(99, syscall_print_slice_string);
+    register_syscall(100, syscall_print_string);
 }

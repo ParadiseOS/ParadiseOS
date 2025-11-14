@@ -34,6 +34,9 @@ u32 new_page_dir();
 
 void alloc_pages(void *vaddr, u16 flags, u32 count);
 
+// Reclaims a frame of physical memory.
+void free_frame(u32 paddr);
+
 void *mem_alloc(Heap *heap, u32 pages);
 void *mem_realloc(Heap *heap, void *ptr, u32 pages);
 void mem_free(Heap *heap, void *ptr);
