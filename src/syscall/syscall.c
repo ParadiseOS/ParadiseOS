@@ -39,3 +39,11 @@ void *delete_syscall(u32 num) {
     syscall_table[num] = NULL;
     return syscall;
 }
+
+SyscallResult syscall_debug() {
+    SYSCALL_RETURN(0, 0);
+}
+
+void syscalls_init() {
+    register_syscall(15, syscall_debug);
+}
