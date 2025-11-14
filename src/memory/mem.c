@@ -206,16 +206,14 @@ RESULT map_page(void *vaddr, u32 paddr, u16 flags) {
 // Unmaps a page from virtual memory and outputs the frame address to `paddr` if
 // non-null. The frame is NOT freed. Returns non-zero if the page was not
 // already mapped.
-RESULT unmap_page(void *vaddr, u32 *paddr, u16 *flags) {
+RESULT unmap_page(void *vaddr, u32 *entry) {
     EntryInfo info = get_entry_info(vaddr);
 
     if (!entry_present(info.entry))
         return true;
 
-    if (paddr)
-        *paddr = get_paddr(info.entry);
-    if (flags)
-        *flags = get_flags(info.entry);
+    if (entry)
+        *entry = info.entry;
 
     info.entry = 0;
     flush_entry_info(info);
@@ -255,7 +253,7 @@ void map_pages(void *vaddr, u32 paddr, u16 flags, u32 count) {
 // Unmaps a series of pages from virtual memory. Does NOT free the frames.
 void unmap_pages(void *vaddr, u32 count) {
     while (count--) {
-        KERNEL_ASSERT(!unmap_page(vaddr, NULL, NULL));
+        KERNEL_ASSERT(!unmap_page(vaddr, NULL));
         vaddr += PAGE_SIZE;
     }
 }
@@ -285,9 +283,9 @@ void free_page(void *vaddr) {
 // frames.
 void free_pages(void *vaddr, u32 count) {
     while (count--) {
-        u32 paddr;
-        KERNEL_ASSERT(!unmap_page(vaddr, &paddr, NULL));
-        free_frame(paddr);
+        u32 entry;
+        KERNEL_ASSERT(!unmap_page(vaddr, &entry));
+        free_frame(get_paddr(entry));
         vaddr += PAGE_SIZE;
     }
 }
@@ -556,9 +554,9 @@ u32 new_page_dir() {
 
     // We don't actually want to free the frame
     heap_free(&kernel_heap, dir);
-    u32 paddr;
-    KERNEL_ASSERT(!unmap_page(dir, &paddr, NULL));
-    return paddr;
+    u32 entry;
+    KERNEL_ASSERT(!unmap_page(dir, &entry));
+    return get_paddr(entry);
 }
 
 // Checks if a given pointer is in userspace.
@@ -698,8 +696,10 @@ SyscallResult syscall_virt_unmap(u32 aid, u32 vaddr, u32 paddr_ptr, u32 n) {
     }
 
     for (u32 i = 0; i < n; ++i) {
+        u32 entry;
         void *page_vaddr = (void *) vaddr + i * PAGE_SIZE;
-        KERNEL_ASSERT(!unmap_page(page_vaddr, paddr + i, NULL));
+        KERNEL_ASSERT(!unmap_page(page_vaddr, &entry));
+        paddr[i] = get_paddr(entry);
     }
 
     set_page_dir(old_pd_paddr);
@@ -745,11 +745,7 @@ syscall_virt_transfer(void *vaddr_src, void *vaddr_dst, u32 aid_pair, u32 n) {
 
     for (u32 i = 0; i < n; ++i) {
         void *page_vaddr = (void *) vaddr_src + i * PAGE_SIZE;
-        u32 paddr;
-        u16 flags;
-
-        KERNEL_ASSERT(!unmap_page(page_vaddr, &paddr, &flags));
-        entries[i] = paddr | flags;
+        KERNEL_ASSERT(!unmap_page(page_vaddr, entries + i));
     }
 
     set_page_dir(proc_dst->page_dir_paddr);
