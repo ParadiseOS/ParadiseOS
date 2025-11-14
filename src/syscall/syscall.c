@@ -2,7 +2,7 @@
 #include "lib/error.h"
 #include "process/processes.h"
 
-#define NUM_SYSCALLS 16
+#define NUM_SYSCALLS 101
 
 void *syscall_table[NUM_SYSCALLS] = { NULL };
 

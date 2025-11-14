@@ -13,6 +13,7 @@
 #include "sun/sun.h"
 #include "terminal/terminal.h"
 #include "tests/testing.h"
+#include "syscall/syscall.h"
 
 const u32 kernel_start_paddr = (u32) &_kernel_start_paddr;
 const void *kernel_start_vaddr = &_kernel_start_vaddr;
