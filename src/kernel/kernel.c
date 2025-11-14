@@ -12,6 +12,7 @@
 #include "process/processes.h"
 #include "sun/sun.h"
 #include "terminal/terminal.h"
+#include "syscall/syscall.h"
 #include "tests/testing.h"
 
 const u32 kernel_start_paddr = (u32) &_kernel_start_paddr;
@@ -69,6 +70,7 @@ void kernel_main(void) {
     kernel_test();
 #endif
 
+    syscalls_init();
     processes_init();
 
     // Add your processes here

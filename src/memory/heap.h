@@ -25,7 +25,7 @@ typedef struct {
     u32 page_count;
 } Heap;
 
-void heap_init(Heap *heap, void *heap_start, u32 page_count);
+void heap_init(Heap *heap, void *heap_start, u32 page_count, u16 flags);
 
 void *heap_alloc(Heap *heap, u32 pages);
 u32 heap_realloc(Heap *heap, void *ptr, void **new_ptr, u32 pages);
