@@ -28,7 +28,7 @@ Queue run_queue;
 
 Process *current = NULL;
 CpuContext *current_ctx = NULL;
-u32 pid_counter = 1;
+u32 pid_counter = 1 << 16; // Start PIDs at the Most Sig 16 Bits
 
 ProcessControlBlock *pcb = PCB_ADDR;
 Mailbox *mailbox = MAILBOX_ADDR;
