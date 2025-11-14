@@ -5,6 +5,7 @@
 #include "kernel/kernel.h"
 #include "lib/error.h"
 #include "lib/libp.h"
+#include "lib/logging.h"
 #include "memory/heap.h"
 #include "memory/mem.h"
 #include "process/pool.h"
@@ -12,7 +13,6 @@
 #include "process/rb_tree.h"
 #include "sun/sun.h"
 #include "syscall/syscall.h"
-#include "lib/logging.h"
 
 #define STACK_SIZE   (4 * PAGE_SIZE)
 #define STACK_TOP    ((void *) 0xbfc00000)

@@ -11,8 +11,8 @@
 #include "memory/mem.h"
 #include "process/processes.h"
 #include "sun/sun.h"
-#include "terminal/terminal.h"
 #include "syscall/syscall.h"
+#include "terminal/terminal.h"
 #include "tests/testing.h"
 
 const u32 kernel_start_paddr = (u32) &_kernel_start_paddr;

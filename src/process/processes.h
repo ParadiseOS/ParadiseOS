@@ -4,8 +4,8 @@
 #include "lib/types.h"
 #include "memory/heap.h"
 #include "memory/mem.h"
-#include "rb_tree.h"
 #include "queue.h"
+#include "rb_tree.h"
 
 typedef struct {
     u32 page_dir_paddr;

@@ -1,8 +1,8 @@
 #include "ipc/mailbox.h"
 #include "lib/error.h"
 #include "lib/libp.h"
-#include "memory/mem.h"
 #include "lib/logging.h"
+#include "memory/mem.h"
 
 void *page_ptr(void *addr) {
     return (void *) ((u32) addr / PAGE_SIZE * PAGE_SIZE);

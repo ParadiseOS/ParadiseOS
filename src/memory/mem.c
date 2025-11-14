@@ -3,11 +3,11 @@
 #include "kernel/kernel.h"
 #include "lib/error.h"
 #include "lib/libp.h"
+#include "lib/logging.h"
 #include "lib/util.h"
 #include "memory/heap.h"
 #include "process/processes.h"
 #include "syscall/syscall.h"
-#include "lib/logging.h"
 
 #define LOWER_MEM_PAGE_COUNT  256
 #define MAX_KERNEL_PAGE_COUNT 0x300 // last 3/4 of page table
@@ -44,8 +44,9 @@ u32 *page_table_entries = (u32 *) 0xFFC00000;
 // since the user can only map user-mode pages.
 #define VIRT_MAP_WRITABLE 1
 
-#define KERNEL_MEM_SHARE_DIV 5 // Division of physical memory that is reserved
-                               // for the kernel
+// Division of physical memory that is reserved
+// for the kernel
+#define KERNEL_MEM_SHARE_DIV 5
 
 #define USER_RO_PAGES 1024 // Number of virtual pages for user read-only memory
 
