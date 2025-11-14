@@ -5,6 +5,7 @@
 #include "kernel/kernel.h"
 #include "lib/error.h"
 #include "lib/libp.h"
+#include "lib/logging.h"
 #include "memory/heap.h"
 #include "memory/mem.h"
 #include "process/pool.h"
@@ -12,7 +13,6 @@
 #include "process/rb_tree.h"
 #include "sun/sun.h"
 #include "syscall/syscall.h"
-#include "lib/logging.h"
 
 #define STACK_SIZE   (4 * PAGE_SIZE)
 #define STACK_TOP    ((void *) 0xbfc00000)
@@ -86,7 +86,6 @@ void exec_sun(const char *name, int arg) {
     void *stack = STACK_TOP;
 
     u32 heap_pages = ((u32) STACK_TOP - (u32) heap) / PAGE_SIZE;
-
 
     u32 page_dir = new_page_dir();
     load_page_dir(page_dir);
@@ -222,9 +221,9 @@ SyscallResult syscall_register_process() {
 }
 
 SyscallResult syscall_delete_process(u32 pid) {
-    Process * proc = get_process(pid);
+    Process *proc = get_process(pid);
     u32 res = 1;
-    if (proc){
+    if (proc) {
         u32 p_addr = proc->page_dir_paddr;
         free_frame(p_addr);
         rb_remove(&process_tree, pid);
@@ -238,7 +237,7 @@ SyscallResult syscall_delete_process(u32 pid) {
 SyscallResult syscall_jump_process(u32 pid) {
     u32 res = 1;
 
-    Process * proc = get_process(pid);
+    Process *proc = get_process(pid);
     if (proc) {
         current = proc;
         load_page_dir(proc->page_dir_paddr);
