@@ -31,7 +31,7 @@ void rb_init(RbTree *tree);
 
 // Returns whether or not the insertion occurred. Insertion occurs if and only
 // if the key does not already exist.
-bool rb_insert(RbTree *tree, RbNode *node, u16 key);
+bool rb_insert(RbTree *tree, RbNode *node, u32 key);
 RbNode *rb_find(RbTree *tree, u32 key);
 RbNode *rb_remove(RbTree *tree, u32 key);
 
