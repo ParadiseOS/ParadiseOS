@@ -3,6 +3,7 @@
 
 #include "boot/multiboot.h"
 #include "heap.h"
+#include "lib/error.h"
 #include "lib/types.h"
 
 #define PAGE_SIZE 4096
@@ -19,6 +20,10 @@ extern u32 get_page_dir_paddr();
 extern void fpu_save(void *fpu_regs);
 extern void fpu_restore(void *fpu_regs);
 
+u32 get_paddr(u32 entry);
+u32 get_entry(void *vaddr);
+u16 get_flags(u32 entry);
+
 u32 size_in_pages(u32 size_in_bytes);
 u32 align_next_frame(u32 paddr);
 void *align_next_page(void *vaddr);
@@ -27,12 +32,17 @@ bool is_page_aligned(void *ptr);
 void print_frame_usage();
 
 void mem_init();
+u32 alloc_frame();
+RESULT map_page(void *vaddr, u32 paddr, u16 flags);
 void map_pages(void *vaddr, u32 paddr, u16 flags, u32 count);
 void swap_page_frames(void *vaddr1, void *vaddr2);
 
 u32 new_page_dir();
 
+void alloc_page(void *vaddr, u16 flags);
 void alloc_pages(void *vaddr, u16 flags, u32 count);
+void free_page(void *vaddr);
+void free_pages(void *vaddr, u32 count);
 
 // Reclaims a frame of physical memory.
 void free_frame(u32 paddr);

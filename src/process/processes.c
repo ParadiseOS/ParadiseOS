@@ -14,11 +14,12 @@
 #include "sun/sun.h"
 #include "syscall/syscall.h"
 
-#define STACK_SIZE   (4 * PAGE_SIZE)
-#define STACK_TOP    ((void *) 0xbfc00000)
-#define PROCESS_ORG  ((void *) 0x402000)
-#define MAILBOX_ADDR (PROCESS_ORG - PAGE_SIZE)
-#define PCB_ADDR     (MAILBOX_ADDR - PAGE_SIZE)
+#define MAILBOX_RESERVED  17
+#define STACK_SIZE        (4 * PAGE_SIZE)
+#define STACK_TOP         ((void *) 0xbfc00000)
+#define PROCESS_ORG       ((void *) 0x420000)
+#define MAILBOX_DATA_ADDR (PROCESS_ORG - (PAGE_SIZE * MAILBOX_RESERVED))
+#define PCB_ADDR          (MAILBOX_DATA_ADDR - PAGE_SIZE)
 
 #define INIT_EFLAGS 0b1000000010
 
@@ -28,10 +29,11 @@ Queue run_queue;
 
 Process *current = NULL;
 CpuContext *current_ctx = NULL;
+
 u16 aid_counter = 1; // Start PIDs at the Most Sig 16 Bits
 
 ProcessControlBlock *pcb = PCB_ADDR;
-Mailbox *mailbox = MAILBOX_ADDR;
+MailboxPage *mailbox_data = MAILBOX_DATA_ADDR;
 
 __attribute__((noreturn)) extern void
 jump_usermode(void (*f)(), void *stack, ProcessControlBlock *pcb);
@@ -81,7 +83,7 @@ static u32 next_free_aid() {
 void exec_sun(const char *name, int arg) {
     TableEntry *entry = sun_exe_lookup(name);
 
-    KERNEL_ASSERT(entry->text_size);
+    KERNEL_ASSERT(entry && entry->text_size);
 
     void *text = PROCESS_ORG;
     void *rodata = align_next_page(text + entry->text_size - 1);
@@ -107,14 +109,12 @@ void exec_sun(const char *name, int arg) {
     if (entry->bss_size)
         alloc_pages(bss, RW_FLAGS, (heap - bss) / PAGE_SIZE);
     alloc_pages(stack - STACK_SIZE, RW_FLAGS, STACK_SIZE / PAGE_SIZE);
-    alloc_pages(mailbox, PAGE_WRITABLE, 1);
     alloc_pages(pcb, PAGE_WRITABLE, 1);
 
     sun_load_text(entry, text);
     sun_load_rodata(entry, rodata);
     sun_load_data(entry, data);
     pmemset(bss, 0, entry->bss_size);
-    mailbox_init_temp(mailbox);
 
     pcb->prog_brk = heap;
     pcb->eip = (u32) entry->entry_point;
@@ -124,6 +124,8 @@ void exec_sun(const char *name, int arg) {
     pcb->eax = arg;
 
     pmemset(pcb->fpu_regs, 0, /*fpu_regs size*/ 512);
+
+    mailbox_init(&pcb->mailbox, mailbox_data, PAGE_WRITABLE);
 
     heap_init(&pcb->heap, heap, heap_pages);
 
@@ -200,27 +202,36 @@ u32 process_init(Process *p, u32 pid) {
     return pid;
 }
 
-SyscallResult syscall_send_message(u32 pid, u32 len, char *data) {
-    u8 message_size = len & 0xFF;
+SyscallResult syscall_send_message(
+    u32 reader_pid, u32 data_size, const char *data, u32 flags
+) {
+    u8 message_size = data_size & 0xFF;
     char message_cpy[256];
     pmemcpy(message_cpy, data, message_size);
     message_cpy[message_size] = '\0';
-    i32 org_pid = GET_PID(current);
+    i32 sender_pid = GET_PID(current);
 
     // Switch address space
-    Process *dst = get_process(pid);
-    KERNEL_ASSERT(dst);
+    Process *dst = get_process(reader_pid);
+    KERNEL_ASSERT(dst); // Todo: Turn this into an error
     load_page_dir(dst->page_dir_paddr);
 
-    // Send message to mailbox
-    send_message(mailbox, org_pid, message_size, message_cpy);
-
-    if (dst->blocked) {
-        dst->blocked = false;
-        pcb->eax = read_message(mailbox, (void *) pcb->ebx);
-        KERNEL_ASSERT(pcb->eax);
-        queue_add(&run_queue, &dst->queue_node);
+    if (flags & IPC_SIGNAL) {
+        send_signal(message_cpy[0]);
     }
+    else {
+        mailbox_send_message(
+            &pcb->mailbox, sender_pid, reader_pid, message_size, message_cpy
+        );
+    }
+
+    // Todo: We will handle blocking later & differently
+    // if (dst->blocked) {
+    //     dst->blocked = false;
+    //     pcb->eax = read_message(mailbox, (void *) pcb->ebx);
+    //     KERNEL_ASSERT(pcb->eax);
+    //     queue_add(&run_queue, &dst->queue_node);
+    // }
 
     // Switch back address space
     load_page_dir(current->page_dir_paddr);
@@ -261,14 +272,20 @@ SyscallResult syscall_jump_process(u32 pid) {
     SYSCALL_RETURN(0, PID_NOT_FOUND);
 }
 
-SyscallResult syscall_read_message(char *out, u32 blocking) {
-    bool res = read_message(mailbox, out);
-    if (blocking && !res) {
-        KERNEL_ASSERT(!current->blocked); // Can't issue syscall while blocked
-        current->blocked = true;
-        save_context_syscall(current_ctx);
-        schedule();
-    }
+SyscallResult syscall_read_message(
+    u32 sender_pid, u32 reader_pid, MailboxMessage *message, u32 flags
+) {
+    bool res =
+        mailbox_read_message(&pcb->mailbox, sender_pid, reader_pid, message);
+
+    (void) flags;
+
+    // Todo: we will handle blocking later & differently
+    // if (blocking && !res) {
+    //     KERNEL_ASSERT(!current->blocked); // Can't issue syscall while
+    //     blocked current->blocked = true; save_context_syscall(current_ctx);
+    //     schedule();
+    // }
     SYSCALL_RETURN(res, 0);
 }
 
