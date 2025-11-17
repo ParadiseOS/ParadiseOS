@@ -1,51 +1,70 @@
+#ifndef MAILBOX_H_
+#define MAILBOX_H_
+
 #include "lib/error.h"
 #include "lib/types.h"
 #include "memory/mem.h"
 
 // The mailbox messaging IPC is described in ParadiseDocs
-// Because memory is still being worked on these functions may change
-// drastically All unused functions are marked as current development doesn't
-// support them They are still implemented to showcase what we hope the expected
-// end behavior to be
+// Because ipc is still being worked on these functions may change drastically
 
-#define MAILBOX_DATA_SIZE 4076 // 4076 to keep Mailbox page aligned
-#define MAX_MESSAGE_SIZE  255  // max u8 value
+#define MAILBOX_DATA_SIZE PAGE_SIZE
+#define MAX_MESSAGE_SIZE  255
+
+// Send Message Syscall Flags
+#define IPC_SIGNAL (1 << 0)
+
+// Read Message Syscall Flags
+#define IPC_BLOCKING (1 << 0)
 
 typedef struct {
     void *head;
     void *tail;
-    u16 size;
+    u16 unread_size;
+    u16 used_size;
     u16 capacity;
-    void *next_page;
-    void *prev_page;
-    char data[MAILBOX_DATA_SIZE];
-} MailboxHead;
+    void *first_page;
+    void *last_page;
+    void *copy_page;
+    // MailboxPage Structure should always be contigious.
+} MailboxHeader;
 
 typedef struct {
-    char reserved[12];
-    void *next_page;
-    void *prev_page;
     char data[MAILBOX_DATA_SIZE];
 } MailboxPage;
 
-typedef struct {
-    u16 pid;
-    u8 message_size;
+typedef struct __attribute__((packed)) {
+    u32 sender_pid;
+    u32 reader_pid;
+    u8 data_size;
+} MailboxMessageHeader;
+
+typedef struct __attribute__((packed)) {
+    MailboxMessageHeader header;
     char data[MAX_MESSAGE_SIZE];
 } MailboxMessage;
 
-typedef MailboxHead Mailbox;
+_Static_assert(sizeof(MailboxPage) == PAGE_SIZE, "Mailbox size");
 
-_Static_assert(sizeof(MailboxHead) == sizeof(MailboxPage), "Mailbox size");
-_Static_assert(sizeof(Mailbox) == PAGE_SIZE, "Mailbox size");
+void mailbox_init(
+    MailboxHeader *mailbox, void *mailbox_start_addr, u16 page_flags
+);
 
-// Temporary mailbox initialization. Treats an address like a mailbox.
-void mailbox_init_temp(Mailbox *mailbox);
+void mailbox_del(MailboxHeader *mailbox);
 
 // Sends a message to a mailbox
-int send_message(Mailbox *mailbox, u16 sender_pid, u8 size, const char *data);
+int mailbox_send_message(
+    MailboxHeader *mailbox, u32 sender_pid, u32 reader_pid, u8 data_size,
+    const void *data
+);
 
-/** Reads a message from a mailbox into str[258]
- *  Returns true if a message was read, otherwise false
- */
-bool read_message(MailboxHead *mailbox, char *str);
+// Reads messages from sender & reader of mailbox
+int mailbox_read_message(
+    MailboxHeader *mailbox, u32 sender_pid, u32 reader_pid,
+    MailboxMessage *message
+);
+
+// sends a signal to a process
+int send_signal(u8 signal_num);
+
+#endif // MAILBOX_H_

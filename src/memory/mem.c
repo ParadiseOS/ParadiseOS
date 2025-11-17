@@ -3,11 +3,11 @@
 #include "kernel/kernel.h"
 #include "lib/error.h"
 #include "lib/libp.h"
+#include "lib/logging.h"
 #include "lib/util.h"
 #include "memory/heap.h"
 #include "process/processes.h"
 #include "syscall/syscall.h"
-#include "lib/logging.h"
 
 #define LOWER_MEM_PAGE_COUNT  256
 #define MAX_KERNEL_PAGE_COUNT 0x300 // last 3/4 of page table
@@ -60,11 +60,11 @@ static u32 get_pt_index(void *vaddr) {
     return ((u32) vaddr >> 12) & 0x3FF;
 }
 
-static u32 get_paddr(u32 entry) {
+u32 get_paddr(u32 entry) {
     return entry & ~0xFFF;
 }
 
-static u16 get_flags(u32 entry) {
+u16 get_flags(u32 entry) {
     return entry & 0xFFF;
 }
 
@@ -77,15 +77,15 @@ __attribute__((warn_unused_result)) static u32 set_paddr(u32 entry, u32 paddr) {
 //     return get_paddr(entry) | flags;
 // }
 
-static u32 *get_page_table(u32 pd_index) {
+u32 *get_page_table(u32 pd_index) {
     return &PTE(pd_index, 0);
 }
 
-static bool entry_present(u32 entry) {
+bool entry_present(u32 entry) {
     return (entry & 1) != 0;
 }
 
-static u32 get_entry(void *vaddr) {
+u32 get_entry(void *vaddr) {
     u32 pdi = get_pd_index(vaddr);
     if (!entry_present(PDE(pdi)))
         return 0;
@@ -225,6 +225,11 @@ void unmap_pages(void *vaddr, u32 count) {
     }
 }
 
+// Allocates page at given virtual address & backs memory with physical frame.
+void alloc_page(void *vaddr, u16 flags) {
+    KERNEL_ASSERT(!map_page(vaddr, alloc_frame(), flags));
+}
+
 // Allocates pages at a given virtual address. Also backs the memory with
 // physical frames.
 void alloc_pages(void *vaddr, u16 flags, u32 count) {
@@ -232,6 +237,13 @@ void alloc_pages(void *vaddr, u16 flags, u32 count) {
         KERNEL_ASSERT(!map_page(vaddr, alloc_frame(), flags));
         vaddr += PAGE_SIZE;
     }
+}
+
+// Frees page at a given virtual address & frees underlying frame
+void free_page(void *vaddr) {
+    u32 paddr;
+    KERNEL_ASSERT(!unmap_page(vaddr, &paddr));
+    free_frame(paddr);
 }
 
 // Frees pages starting at a given virtual address. Also frees the underlying

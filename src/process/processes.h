@@ -1,6 +1,7 @@
 #ifndef PROCESS_H_
 #define PROCESS_H_
 
+#include "ipc/mailbox.h"
 #include "lib/types.h"
 #include "memory/heap.h"
 #include "memory/mem.h"
@@ -29,6 +30,8 @@ typedef struct {
     u32 page_dir_paddr;
 
     u8 fpu_regs[512] __attribute__((aligned(16)));
+
+    MailboxHeader mailbox;
 
     Heap heap;
 } ProcessControlBlock;

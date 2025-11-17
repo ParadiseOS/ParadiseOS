@@ -4,7 +4,7 @@
 
 #define NUM_SYSCALLS 101
 
-void *syscall_table[NUM_SYSCALLS] = { NULL };
+void *syscall_table[NUM_SYSCALLS] = {NULL};
 
 typedef SyscallResult (*Syscall)(u32 a, u32 b, u32 c, u32 d, u32 e);
 
