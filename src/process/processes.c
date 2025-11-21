@@ -59,7 +59,7 @@ static u32 next_free_pid() {
     u16 pid = pid_counter;
 
     do {
-        u32 real_pid = (u32)pid << 16;
+        u32 real_pid = (u32) pid << 16;
         if (!rb_find(&process_tree, real_pid)) {
             pid_counter = pid + 1;
             return real_pid;
@@ -88,9 +88,9 @@ void exec_sun(const char *name, int arg) {
 
     u32 heap_pages = ((u32) STACK_TOP - (u32) heap) / PAGE_SIZE;
 
-    //For testing sys calls
-    //Process* p = get_process(arg);
-    //u32 page_dir = p->page_dir_paddr;
+    // For testing sys calls
+    // Process* p = get_process(arg);
+    // u32 page_dir = p->page_dir_paddr;
 
     u32 page_dir = new_page_dir();
     load_page_dir(page_dir);
@@ -186,6 +186,16 @@ void preempt(InterruptRegisters *regs) {
     }
 }
 
+u32 process_init(Process *p, u32 pid) {
+    if (pid == 0)
+        pid = next_free_pid();
+    u32 page_dir = new_page_dir();
+    p->page_dir_paddr = page_dir;
+    p->blocked = false;
+
+    return pid;
+}
+
 SyscallResult syscall_send_message(u32 pid, u32 len, char *data) {
     u8 message_size = len & 0xFF;
     char message_cpy[256];
@@ -214,33 +224,27 @@ SyscallResult syscall_send_message(u32 pid, u32 len, char *data) {
 }
 
 SyscallResult syscall_register_process() {
-    printk(DEBUG, "Funcion Called\n");
-    u32 pid = next_free_pid();
-    u32 page_dir = new_page_dir();
     Process *p = pool_create(&process_pool);
-    p->page_dir_paddr = page_dir;
-    p->blocked = false;
+    u32 pid = process_init(p, 0);
     rb_insert(&process_tree, &p->rb_node, pid);
-
     SYSCALL_RETURN(pid, 0);
 }
 
+#define PID_NOT_FOUND 1
+
 SyscallResult syscall_delete_process(u32 pid) {
     Process *proc = get_process(pid);
-    u32 res = 1;
     if (proc) {
         u32 p_addr = proc->page_dir_paddr;
         free_frame(p_addr);
         rb_remove(&process_tree, pid);
         pool_destroy(&process_pool, proc);
-        res = 0;
     }
 
-    SYSCALL_RETURN(0, res);
+    SYSCALL_RETURN(0, PID_NOT_FOUND);
 }
 
 SyscallResult syscall_jump_process(u32 pid) {
-    u32 res = 1;
 
     Process *proc = get_process(pid);
     if (proc) {
@@ -250,7 +254,7 @@ SyscallResult syscall_jump_process(u32 pid) {
         jump_usermode((void (*)()) pcb->eip, (void *) pcb->esp, pcb);
     }
 
-    SYSCALL_RETURN(0, res);
+    SYSCALL_RETURN(0, PID_NOT_FOUND);
 }
 
 SyscallResult syscall_read_message(char *out, u32 blocking) {

@@ -13,15 +13,11 @@
 #include "sun/sun.h"
 #include "terminal/terminal.h"
 #include "tests/testing.h"
-#include "syscall/syscall.h"
 
 const u32 kernel_start_paddr = (u32) &_kernel_start_paddr;
 const void *kernel_start_vaddr = &_kernel_start_vaddr;
 const u32 kernel_end_paddr = (u32) &_kernel_end_paddr;
 const void *kernel_end_vaddr = &_kernel_end_vaddr;
-
-extern void *syscall_table[100];
-typedef SyscallResult (*Syscall)(u32 a, u32 b, u32 c, u32 d, u32 e);
 
 void kernel_main(void) {
     if (!(multiboot_info->flags & MB_FLAG_FRAMEBUFFER)) {
