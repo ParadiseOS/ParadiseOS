@@ -88,9 +88,11 @@ void exec_sun(const char *name, int arg) {
 
     u32 heap_pages = ((u32) STACK_TOP - (u32) heap) / PAGE_SIZE;
 
-    Process* p = get_process(arg);
-    u32 page_dir = p->page_dir_paddr;
-    //u32 page_dir = new_page_dir();
+    //For testing sys calls
+    //Process* p = get_process(arg);
+    //u32 page_dir = p->page_dir_paddr;
+
+    u32 page_dir = new_page_dir();
     load_page_dir(page_dir);
 
     alloc_pages(text, RO_FLAGS, (rodata - text) / PAGE_SIZE);
@@ -123,12 +125,12 @@ void exec_sun(const char *name, int arg) {
 
     load_page_dir(kernel_page_dir);
 
-    // u32 pid = next_free_pid();
-    // Process *p = pool_create(&process_pool);
-    // p->page_dir_paddr = page_dir;
-    // p->blocked = false;
-    // rb_insert(&process_tree, &p->rb_node, pid);
-    // queue_add(&run_queue, &p->queue_node);
+    u32 pid = next_free_pid();
+    Process *p = pool_create(&process_pool);
+    p->page_dir_paddr = page_dir;
+    p->blocked = false;
+    rb_insert(&process_tree, &p->rb_node, pid);
+    queue_add(&run_queue, &p->queue_node);
 }
 
 void schedule() {
