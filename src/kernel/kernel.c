@@ -80,29 +80,7 @@ void kernel_main(void) {
 
     asm("sti");
 
-     Syscall reg_proc = syscall_table[2];
-    Syscall del_proc = syscall_table[3];
-    Syscall jmp_proc =syscall_table[4];
-
-    // This works regardless of the number of actual expected parameters since
-    // the callee is responsible for cleaning up the stack.
-    //SyscallResult res =
-        //syscall(ctx->ebx, ctx->ecx, ctx->edx, ctx->esi, ctx->edi);
-
-    SyscallResult reg_ret = reg_proc(0, 0, 0, 0, 0);
-    printk(DEBUG, "Register 1 Ret <%u> Err <%u>\n", reg_ret.ret, reg_ret.err);
-
-    reg_ret = reg_proc(0, 0, 0, 0, 0);
-    printk(DEBUG, "REGISTER 2 Ret <%u> Err <%u>\n", reg_ret.ret, reg_ret.err);
-
-    SyscallResult del_ret = del_proc(9, 0, 0, 0, 0);
-    printk(DEBUG, "DELETE BAD PID Ret <%u> Err <%u>\n", del_ret.ret, del_ret.err);
-
-    exec_sun("hello_world.out", 1 << 16);
-    exec_sun("screamer.out", 2 << 16);
-    jmp_proc(1 << 16, 0, 0, 0 ,0);
-
-    //schedule();
+    schedule();
 
     for (;;) {
         asm("hlt");
