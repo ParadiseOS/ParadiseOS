@@ -28,7 +28,7 @@ Queue run_queue;
 
 Process *current = NULL;
 CpuContext *current_ctx = NULL;
-u32 pid_counter = 1 << 16; // Start PIDs at the Most Sig 16 Bits
+u16 pid_counter = 1; // Start PIDs at the Most Sig 16 Bits
 
 ProcessControlBlock *pcb = PCB_ADDR;
 Mailbox *mailbox = MAILBOX_ADDR;
@@ -56,12 +56,13 @@ static Process *run_queue_next() {
 }
 
 static u32 next_free_pid() {
-    u32 pid = pid_counter;
+    u16 pid = pid_counter;
 
     do {
-        if (!rb_find(&process_tree, pid)) {
+        u32 real_pid = (u32)pid << 16;
+        if (!rb_find(&process_tree, real_pid)) {
             pid_counter = pid + 1;
-            return pid;
+            return real_pid;
         }
 
         pid += 1;
@@ -87,7 +88,9 @@ void exec_sun(const char *name, int arg) {
 
     u32 heap_pages = ((u32) STACK_TOP - (u32) heap) / PAGE_SIZE;
 
-    u32 page_dir = new_page_dir();
+    Process* p = get_process(arg);
+    u32 page_dir = p->page_dir_paddr;
+    //u32 page_dir = new_page_dir();
     load_page_dir(page_dir);
 
     alloc_pages(text, RO_FLAGS, (rodata - text) / PAGE_SIZE);
@@ -120,12 +123,12 @@ void exec_sun(const char *name, int arg) {
 
     load_page_dir(kernel_page_dir);
 
-    u32 pid = next_free_pid();
-    Process *p = pool_create(&process_pool);
-    p->page_dir_paddr = page_dir;
-    p->blocked = false;
-    rb_insert(&process_tree, &p->rb_node, pid);
-    queue_add(&run_queue, &p->queue_node);
+    // u32 pid = next_free_pid();
+    // Process *p = pool_create(&process_pool);
+    // p->page_dir_paddr = page_dir;
+    // p->blocked = false;
+    // rb_insert(&process_tree, &p->rb_node, pid);
+    // queue_add(&run_queue, &p->queue_node);
 }
 
 void schedule() {
@@ -271,5 +274,4 @@ void processes_init() {
     register_syscall(2, syscall_register_process);
     register_syscall(3, syscall_delete_process);
     register_syscall(4, syscall_jump_process);
-    printk(DEBUG, "syscall_register %p\n", &syscall_register_process);
 }

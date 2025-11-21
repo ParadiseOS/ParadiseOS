@@ -20,6 +20,9 @@ const void *kernel_start_vaddr = &_kernel_start_vaddr;
 const u32 kernel_end_paddr = (u32) &_kernel_end_paddr;
 const void *kernel_end_vaddr = &_kernel_end_vaddr;
 
+extern void *syscall_table[100];
+typedef SyscallResult (*Syscall)(u32 a, u32 b, u32 c, u32 d, u32 e);
+
 void kernel_main(void) {
     if (!(multiboot_info->flags & MB_FLAG_FRAMEBUFFER)) {
         // No terminal info is available. Something went wrong and there's no
@@ -77,7 +80,29 @@ void kernel_main(void) {
 
     asm("sti");
 
-    schedule();
+     Syscall reg_proc = syscall_table[2];
+    Syscall del_proc = syscall_table[3];
+    Syscall jmp_proc =syscall_table[4];
+
+    // This works regardless of the number of actual expected parameters since
+    // the callee is responsible for cleaning up the stack.
+    //SyscallResult res =
+        //syscall(ctx->ebx, ctx->ecx, ctx->edx, ctx->esi, ctx->edi);
+
+    SyscallResult reg_ret = reg_proc(0, 0, 0, 0, 0);
+    printk(DEBUG, "Register 1 Ret <%u> Err <%u>\n", reg_ret.ret, reg_ret.err);
+
+    reg_ret = reg_proc(0, 0, 0, 0, 0);
+    printk(DEBUG, "REGISTER 2 Ret <%u> Err <%u>\n", reg_ret.ret, reg_ret.err);
+
+    SyscallResult del_ret = del_proc(9, 0, 0, 0, 0);
+    printk(DEBUG, "DELETE BAD PID Ret <%u> Err <%u>\n", del_ret.ret, del_ret.err);
+
+    exec_sun("hello_world.out", 1 << 16);
+    exec_sun("screamer.out", 2 << 16);
+    jmp_proc(1 << 16, 0, 0, 0 ,0);
+
+    //schedule();
 
     for (;;) {
         asm("hlt");
