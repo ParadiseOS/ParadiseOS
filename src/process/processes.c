@@ -28,7 +28,7 @@ Queue run_queue;
 
 Process *current = NULL;
 CpuContext *current_ctx = NULL;
-u16 pid_counter = 1; // Start PIDs at the Most Sig 16 Bits
+u16 aid_counter = 1; // Start PIDs at the Most Sig 16 Bits
 
 ProcessControlBlock *pcb = PCB_ADDR;
 Mailbox *mailbox = MAILBOX_ADDR;
@@ -55,18 +55,22 @@ static Process *run_queue_next() {
         return NULL;
 }
 
-static u32 next_free_pid() {
-    u16 pid = pid_counter;
+static u32 next_free_aid() {
+    /*
+    The aid is a u16, this function returns the next aid,
+    left shifted 16 bits in order to represent a u32 pid.
+    */
+    u16 aid = aid_counter;
 
     do {
         u32 real_pid = (u32) pid << 16;
         if (!rb_find(&process_tree, real_pid)) {
-            pid_counter = pid + 1;
+            aid_counter = aid + 1;
             return real_pid;
         }
 
-        pid += 1;
-    } while (pid != pid_counter);
+        aid += 1;
+    } while (aid != aid_counter);
 
     KERNEL_ASSERT(false); // Too many processes
 }
@@ -125,7 +129,7 @@ void exec_sun(const char *name, int arg) {
 
     load_page_dir(kernel_page_dir);
 
-    u32 pid = next_free_pid();
+    u32 pid = next_free_aid();
     Process *p = pool_create(&process_pool);
     p->page_dir_paddr = page_dir;
     p->blocked = false;
@@ -188,7 +192,7 @@ void preempt(InterruptRegisters *regs) {
 
 u32 process_init(Process *p, u32 pid) {
     if (pid == 0)
-        pid = next_free_pid();
+        pid = next_free_aid();
     u32 page_dir = new_page_dir();
     p->page_dir_paddr = page_dir;
     p->blocked = false;
