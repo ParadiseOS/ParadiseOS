@@ -63,7 +63,7 @@ static u32 next_free_aid() {
     u16 aid = aid_counter;
 
     do {
-        u32 real_pid = (u32) pid << 16;
+        u32 real_pid = (u32) aid << 16;
         if (!rb_find(&process_tree, real_pid)) {
             aid_counter = aid + 1;
             return real_pid;
