@@ -51,6 +51,6 @@ extern CpuContext *current_ctx;
 void exec_sun(const char *name, int arg);
 __attribute__((noreturn)) void schedule();
 void processes_init();
-Process *get_process(u32 pid);
+Process *get_process(u16 aid);
 
 #endif

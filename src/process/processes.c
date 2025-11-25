@@ -41,8 +41,8 @@ jump_usermode(void (*f)(), void *stack, ProcessControlBlock *pcb);
 #define FIELD_PARENT_PTR(parent_type, field_name, field_ptr)                   \
     ((parent_type *) ((u8 *) field_ptr - offsetof(parent_type, field_name)))
 
-Process *get_process(u32 pid) {
-    RbNode *node = rb_find(&process_tree, pid);
+Process *get_process(u16 aid) {
+    RbNode *node = rb_find(&process_tree, aid << 16);
     if (node)
         return FIELD_PARENT_PTR(Process, rb_node, node);
     else
@@ -65,10 +65,10 @@ static u32 next_free_aid() {
     u16 aid = aid_counter;
 
     do {
-        u32 real_pid = (u32) aid << 16;
-        if (!rb_find(&process_tree, real_pid)) {
+        u32 pid = (u32) aid << 16;
+        if (!rb_find(&process_tree, pid)) {
             aid_counter = aid + 1;
-            return real_pid;
+            return pid;
         }
 
         aid += 1;
@@ -212,7 +212,7 @@ SyscallResult syscall_send_message(
     i32 sender_pid = GET_PID(current);
 
     // Switch address space
-    Process *dst = get_process(reader_pid);
+    Process *dst = get_process(reader_pid >> 16);
     KERNEL_ASSERT(dst); // Todo: Turn this into an error
     load_page_dir(dst->page_dir_paddr);
 
