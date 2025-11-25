@@ -205,13 +205,15 @@ static void report_page_fault(InterruptRegisters *regs) {
         regs->err_code & PF_EC_PRESENT ? "protected" : "non-present";
     u32 addr = regs->cr2;
     u32 eip = regs->eip;
-    i32 pid = (i32)current ? (i32)GET_PID(current) : -1;
+    u32 pid = current ? GET_PID(current) : 0;
+    u32 aid = get_pid_aid(pid);
+    u32 tid = get_pid_tid(pid);
 
     printk(
         DEBUG,
-        "\t%s of address %p at %p in \n"
-        "\t%s mode in pid %i was in a %s page\n",
-        access_type, addr, eip, mode, pid, page_status
+        "%s of address %p at %p in\n"
+        "\t%s mode in pid %u@%u was in a %s page\n",
+        access_type, addr, eip, mode, tid, aid, page_status
     );
 }
 
