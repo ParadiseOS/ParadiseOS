@@ -232,14 +232,14 @@ SyscallResult syscall_send_message(
 
     // Switch back address space
     set_page_dir(current->page_dir_paddr);
-    SYSCALL_RETURN(0, 0);
+    SYSCALL_RET(0);
 }
 
 SyscallResult syscall_register_process() {
     Process *p = pool_create(&process_pool);
     u32 pid = process_init(p, 0);
     rb_insert(&process_tree, &p->rb_node, pid);
-    SYSCALL_RETURN(pid, 0);
+    SYSCALL_RET(pid);
 }
 
 #define PID_NOT_FOUND 1
@@ -253,7 +253,7 @@ SyscallResult syscall_delete_process(u32 pid) {
         pool_destroy(&process_pool, proc);
     }
 
-    SYSCALL_RETURN(0, PID_NOT_FOUND);
+    SYSCALL_ERR(PID_NOT_FOUND);
 }
 
 SyscallResult syscall_jump_process(u32 pid) {
@@ -266,7 +266,7 @@ SyscallResult syscall_jump_process(u32 pid) {
         jump_usermode((void (*)()) pcb->eip, (void *) pcb->esp, pcb);
     }
 
-    SYSCALL_RETURN(0, PID_NOT_FOUND);
+    SYSCALL_ERR(PID_NOT_FOUND);
 }
 
 SyscallResult syscall_read_message(
@@ -283,7 +283,7 @@ SyscallResult syscall_read_message(
     //     blocked current->blocked = true; save_context_syscall(current_ctx);
     //     schedule();
     // }
-    SYSCALL_RETURN(res, 0);
+    SYSCALL_RET(res);
 }
 
 void processes_init() {

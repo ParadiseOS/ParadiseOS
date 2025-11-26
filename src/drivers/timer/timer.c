@@ -31,10 +31,10 @@ void timer_handler(InterruptRegisters *regs) {
 SyscallResult
 syscall_reg_tmr_cb(void(callback)(InterruptRegisters *regs), u32 ticks) {
     if (ticks == 0)
-        SYSCALL_RETURN(0, 1);
+        SYSCALL_ERR(1);
     sched_callback = callback;
     sched_ticks = ticks;
-    SYSCALL_RETURN(0, 0);
+    SYSCALL_RET(0);
 }
 
 void init_timer() {
