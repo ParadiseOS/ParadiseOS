@@ -41,7 +41,7 @@ void *delete_syscall(u32 num) {
 }
 
 SyscallResult syscall_debug() {
-    SYSCALL_RETURN(0, 0);
+    SYSCALL_RET(0);
 }
 
 void syscalls_init() {

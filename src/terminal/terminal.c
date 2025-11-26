@@ -106,12 +106,12 @@ SyscallResult syscall_print_slice_string(char *s, u32 n) {
         terminal_putchar(s[i]);
     }
 
-    SYSCALL_RETURN(0, 0);
+    SYSCALL_RET(0);
 }
 
 SyscallResult syscall_print_string(char *s) {
     terminal_printf("%s", s);
-    SYSCALL_RETURN(0, 0);
+    SYSCALL_RET(0);
 }
 
 void terminal_init(usize width, usize height, u16 *buffer) {
