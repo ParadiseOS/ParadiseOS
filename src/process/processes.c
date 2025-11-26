@@ -6,6 +6,7 @@
 #include "lib/error.h"
 #include "lib/libp.h"
 #include "lib/logging.h"
+#include "lib/util.h"
 #include "memory/heap.h"
 #include "memory/mem.h"
 #include "process/pool.h"
@@ -93,10 +94,6 @@ void exec_sun(const char *name, int arg) {
     void *stack = STACK_TOP;
 
     u32 heap_pages = ((u32) STACK_TOP - (u32) heap) / PAGE_SIZE;
-
-    // For testing sys calls
-    // Process* p = get_process(arg);
-    // u32 page_dir = p->page_dir_paddr;
 
     u32 old_page_dir = get_page_dir();
     u32 page_dir = new_page_dir();
@@ -212,7 +209,7 @@ SyscallResult syscall_send_message(
     i32 sender_pid = GET_PID(current);
 
     // Switch address space
-    Process *dst = get_process(reader_pid >> 16);
+    Process *dst = get_process(get_pid_aid(reader_pid));
     KERNEL_ASSERT(dst); // Todo: Turn this into an error
     set_page_dir(dst->page_dir_paddr);
 
@@ -248,7 +245,7 @@ SyscallResult syscall_register_process() {
 #define PID_NOT_FOUND 1
 
 SyscallResult syscall_delete_process(u32 pid) {
-    Process *proc = get_process(pid);
+    Process *proc = get_process(get_pid_aid(pid));
     if (proc) {
         u32 p_addr = proc->page_dir_paddr;
         free_frame(p_addr);
@@ -261,7 +258,7 @@ SyscallResult syscall_delete_process(u32 pid) {
 
 SyscallResult syscall_jump_process(u32 pid) {
 
-    Process *proc = get_process(pid);
+    Process *proc = get_process(get_pid_aid(pid));
     if (proc) {
         current = proc;
         set_page_dir(proc->page_dir_paddr);
