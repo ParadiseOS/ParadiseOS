@@ -1,9 +1,9 @@
 #ifndef MAILBOX_H_
 #define MAILBOX_H_
 
-#include "lib/error.h"
-#include "lib/types.h"
-#include "memory/mem.h"
+#include "error.h"
+#include "mem.h"
+#include "types.h"
 
 // The mailbox messaging IPC is described in ParadiseDocs
 // Because ipc is still being worked on these functions may change drastically

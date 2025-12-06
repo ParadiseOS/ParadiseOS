@@ -1,10 +1,9 @@
-#include "ipc/mailbox.h"
-#include "lib/error.h"
-#include "lib/libp.h"
-#include "lib/logging.h"
-#include "lib/util.h"
-#include "mailbox.h"
-#include "memory/mem.h"
+#include <paradise/error.h>
+#include <paradise/libp.h>
+#include <paradise/logging.h>
+#include <paradise/mailbox.h>
+#include <paradise/mem.h>
+#include <paradise/util.h>
 
 void *page_ptr(void *addr) {
     return (void *) (((u32) addr >> 12) << 12 /* Page Size Bits */);

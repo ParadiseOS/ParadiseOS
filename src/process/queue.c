@@ -1,5 +1,5 @@
-#include "queue.h"
-#include "lib/types.h"
+#include <paradise/queue.h>
+#include <paradise/types.h>
 
 void queue_init(Queue *q) {
     q->head = NULL;

@@ -1,7 +1,7 @@
 #ifndef LIBP_H_
 #define LIBP_H_
 
-#include "lib/types.h"
+#include "types.h"
 
 // NOTE: This should be reserved for Paradise specific things. At some point we
 // will need to port libc and call it plibc.

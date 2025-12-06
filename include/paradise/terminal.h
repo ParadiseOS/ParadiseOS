@@ -1,7 +1,7 @@
 #ifndef TERMINAL_H_
 #define TERMINAL_H_
 
-#include "lib/types.h"
+#include "types.h"
 
 typedef struct {
     usize row;

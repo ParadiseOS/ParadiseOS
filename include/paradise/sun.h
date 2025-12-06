@@ -1,7 +1,7 @@
 #ifndef SUN_H_
 #define SUN_H_
 
-#include "lib/types.h"
+#include "types.h"
 
 typedef struct {
     char name[16];

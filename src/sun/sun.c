@@ -1,6 +1,6 @@
-#include "sun.h"
-#include "lib/error.h"
-#include "lib/libp.h"
+#include <paradise/error.h>
+#include <paradise/libp.h>
+#include <paradise/sun.h>
 
 typedef struct {
     char magic[3];

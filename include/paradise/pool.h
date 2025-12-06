@@ -1,9 +1,9 @@
 #ifndef POOL_H_
 #define POOL_H_
 
-#include "lib/types.h"
-#include "memory/mem.h"
-#include "process/processes.h"
+#include "mem.h"
+#include "processes.h"
+#include "types.h"
 
 typedef struct {
     Process *free_list;

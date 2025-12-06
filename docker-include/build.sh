@@ -98,7 +98,7 @@ printf -- "---------------------------------------\n"
 
 find src -type f -name "*.c" | while read -r file; do
     output="bin/$(basename -s .c "$file").o"
-    i686-elf-gcc -c "$file" -o "$output" -std=gnu99 -ffreestanding -ggdb -masm=intel -Wall -Wextra -Isrc $TESTS_FLAG $LOGGING_FLAG
+    i686-elf-gcc -c "$file" -o "$output" -std=gnu99 -ffreestanding -ggdb -masm=intel -Wall -Wextra -Iinclude $TESTS_FLAG $LOGGING_FLAG
 done
 
 find src -type f -name "*.s" | while read -r file; do

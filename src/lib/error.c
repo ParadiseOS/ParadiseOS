@@ -1,4 +1,4 @@
-#include "error.h"
+#include <paradise/error.h>
 
 void kernel_panic() {
     panic_handler();

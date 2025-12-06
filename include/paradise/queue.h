@@ -1,7 +1,7 @@
 #ifndef QUEUE_H_
 #define QUEUE_H_
 
-#include "lib/types.h"
+#include "types.h"
 
 typedef struct QueueNode_ QueueNode;
 struct QueueNode_ {

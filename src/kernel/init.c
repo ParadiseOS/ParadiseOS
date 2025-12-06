@@ -1,10 +1,10 @@
-#include "init.h"
-#include "kernel/kernel.h"
-#include "lib/error.h"
-#include "lib/libp.h"
-#include "lib/types.h"
-#include "process/processes.h"
-#include "terminal/terminal.h"
+#include <paradise/error.h>
+#include <paradise/init.h>
+#include <paradise/kernel.h>
+#include <paradise/libp.h>
+#include <paradise/processes.h>
+#include <paradise/terminal.h>
+#include <paradise/types.h>
 
 extern void load_gdt(TablePointer *);
 extern void load_tss(u32 gdt_index);

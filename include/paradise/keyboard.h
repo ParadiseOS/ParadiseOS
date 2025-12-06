@@ -2,7 +2,7 @@
 #define KEYBOARD_H_
 
 //! May want to move interrupt registers to util for convience
-#include "interrupts/interrupt.h"
+#include "interrupt.h"
 
 #define SCAN_PORT 0x60
 

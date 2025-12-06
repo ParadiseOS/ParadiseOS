@@ -1,6 +1,6 @@
-#include "syscall.h"
-#include "lib/error.h"
-#include "process/processes.h"
+#include <paradise/error.h>
+#include <paradise/processes.h>
+#include <paradise/syscall.h>
 
 #define NUM_SYSCALLS 101
 

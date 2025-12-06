@@ -1,7 +1,7 @@
 #ifndef KERNEL_H_
 #define KERNEL_H_
 
-#include "lib/types.h"
+#include "types.h"
 
 extern const u32 *kernel_stack;
 

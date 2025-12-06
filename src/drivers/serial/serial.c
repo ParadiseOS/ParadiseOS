@@ -1,6 +1,6 @@
-#include "io.h"
-#include "lib/error.h"
-#include "lib/util.h"
+#include <paradise/error.h>
+#include <paradise/serial.h>
+#include <paradise/util.h>
 
 void serial_init() {
     outb(PORT_COM1 + 1, 0x00); // Disable all interrupts

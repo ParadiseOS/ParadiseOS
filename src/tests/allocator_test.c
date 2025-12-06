@@ -1,10 +1,10 @@
-#include "allocator_test.h"
-#include "lib/error.h"
-#include "lib/libp.h"
-#include "lib/types.h"
-#include "memory/heap.h"
-#include "memory/mem.h"
-#include "terminal/terminal.h"
+#include <paradise/allocator_test.h>
+#include <paradise/error.h>
+#include <paradise/heap.h>
+#include <paradise/libp.h>
+#include <paradise/mem.h>
+#include <paradise/terminal.h>
+#include <paradise/types.h>
 
 typedef struct Allocation_ Allocation;
 

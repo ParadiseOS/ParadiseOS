@@ -1,15 +1,15 @@
-#include "testing.h"
-#include "boot/multiboot.h"
-#include "drivers/serial/io.h"
-#include "ipc/mailbox.h"
-#include "kernel/kernel.h"
-#include "lib/error.h"
-#include "lib/libp.h"
-#include "lib/types.h"
-#include "memory/mem.h"
-#include "process/queue.h"
-#include "process/rb_tree.h"
-#include "terminal/terminal.h"
+#include <paradise/error.h>
+#include <paradise/kernel.h>
+#include <paradise/libp.h>
+#include <paradise/mailbox.h>
+#include <paradise/mem.h>
+#include <paradise/multiboot.h>
+#include <paradise/queue.h>
+#include <paradise/rb_tree.h>
+#include <paradise/serial.h>
+#include <paradise/terminal.h>
+#include <paradise/testing.h>
+#include <paradise/types.h>
 
 void kernel_test() {
     terminal_printf("\nTesting is enabled!\n");

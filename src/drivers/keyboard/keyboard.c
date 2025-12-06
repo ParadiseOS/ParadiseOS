@@ -1,6 +1,6 @@
-#include "keyboard.h"
-#include "lib/util.h"
-#include "terminal/terminal.h"
+#include <paradise/keyboard.h>
+#include <paradise/terminal.h>
+#include <paradise/util.h>
 
 bool capsOn;
 bool capsLock;

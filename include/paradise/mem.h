@@ -1,10 +1,10 @@
 #ifndef MEM_H_
 #define MEM_H_
 
-#include "boot/multiboot.h"
+#include "error.h"
 #include "heap.h"
-#include "lib/error.h"
-#include "lib/types.h"
+#include "multiboot.h"
+#include "types.h"
 
 #define PAGE_SIZE 4096
 

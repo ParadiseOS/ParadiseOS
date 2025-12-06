@@ -1,19 +1,19 @@
-#include "kernel.h"
-#include "boot/multiboot.h"
-#include "drivers/keyboard/keyboard.h"
-#include "drivers/serial/io.h"
-#include "drivers/timer/timer.h"
-#include "init.h"
-#include "interrupts/interrupt.h"
-#include "lib/error.h"
-#include "lib/logging.h"
-#include "lib/strings.h"
-#include "memory/mem.h"
-#include "process/processes.h"
-#include "sun/sun.h"
-#include "syscall/syscall.h"
-#include "terminal/terminal.h"
-#include "tests/testing.h"
+#include <paradise/error.h>
+#include <paradise/init.h>
+#include <paradise/interrupt.h>
+#include <paradise/kernel.h>
+#include <paradise/keyboard.h>
+#include <paradise/logging.h>
+#include <paradise/mem.h>
+#include <paradise/multiboot.h>
+#include <paradise/processes.h>
+#include <paradise/serial.h>
+#include <paradise/strings.h>
+#include <paradise/sun.h>
+#include <paradise/syscall.h>
+#include <paradise/terminal.h>
+#include <paradise/testing.h>
+#include <paradise/timer.h>
 
 const u32 kernel_start_paddr = (u32) &_kernel_start_paddr;
 const void *kernel_start_vaddr = &_kernel_start_vaddr;

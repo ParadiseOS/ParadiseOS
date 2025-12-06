@@ -37,6 +37,7 @@ foreach ($arg in $args) {
 docker run `
     --mount type=bind,source=$CurrentDir/build,target=/usr/app/build `
     --mount type=bind,source=$CurrentDir/src,target=/usr/app/src `
+    --mount type=bind,source=$CurrentDir/include,target=/usr/app/include `
     --mount type=bind,source=$CurrentDir/docker-include,target=/usr/app/scripts `
     --mount type=bind,source=$CurrentDir/elf2sun,target=/usr/app/elf2sun `
     --mount type=bind,source=$CurrentDir/libp,target=/usr/app/libp `
