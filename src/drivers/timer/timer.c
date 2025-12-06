@@ -29,7 +29,7 @@ void timer_handler(InterruptRegisters *regs) {
 }
 
 SyscallResult
-syscall_reg_tmr_cb(void(callback)(InterruptRegisters *regs), u32 ticks) {
+syscall_reg_tmr_cb(void (*callback)(InterruptRegisters *regs), u32 ticks) {
     if (ticks == 0)
         SYSCALL_ERR(1);
     sched_callback = callback;
