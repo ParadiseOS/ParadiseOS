@@ -4,7 +4,7 @@
 // See
 // https://www.gnu.org/software/grub/manual/multiboot/multiboot.html
 
-#include "lib/types.h"
+#include "types.h"
 
 #define MMAP_AVAILABLE 1
 #define MMAP_RESERVED  2

@@ -1,7 +1,7 @@
 #ifndef RB_TREE_H_
 #define RB_TREE_H_
 
-#include "lib/types.h"
+#include "types.h"
 
 typedef struct RbNode_ RbNode;
 struct RbNode_ {

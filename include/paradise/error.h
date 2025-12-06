@@ -1,7 +1,7 @@
 #ifndef ERROR_H_
 #define ERROR_H_
 
-#include "lib/logging.h"
+#include "logging.h"
 
 /**
  *  Assert that some condition holds. Log and panic otherwise. Note that logging

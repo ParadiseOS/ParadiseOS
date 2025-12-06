@@ -1,8 +1,8 @@
-#include "terminal.h"
-#include "drivers/serial/io.h"
-#include "lib/strings.h"
-#include "lib/util.h"
-#include "syscall/syscall.h"
+#include <paradise/serial.h>
+#include <paradise/strings.h>
+#include <paradise/syscall.h>
+#include <paradise/terminal.h>
+#include <paradise/util.h>
 #include <stdarg.h>
 
 Terminal terminal;

@@ -1,7 +1,7 @@
 #ifndef HEAP_H_
 #define HEAP_H_
 
-#include "lib/types.h"
+#include "types.h"
 
 // A very simple page allocator implemented with a bit vector representing heap
 // usage. Two bits are assigned per page.

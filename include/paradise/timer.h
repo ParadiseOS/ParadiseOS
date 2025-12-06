@@ -1,9 +1,9 @@
 #ifndef TIMER_H_
 #define TIMER_H_
 
-#include "interrupts/interrupt.h"
-#include "lib/types.h"
-#include "syscall/syscall.h"
+#include "interrupt.h"
+#include "syscall.h"
+#include "types.h"
 
 extern void (*sched_callback)(InterruptRegisters *regs);
 

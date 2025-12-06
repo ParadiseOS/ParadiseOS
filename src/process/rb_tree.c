@@ -1,8 +1,8 @@
-#include "rb_tree.h"
-#include "kernel/kernel.h"
-#include "lib/error.h"
-#include "lib/types.h"
-#include "terminal/terminal.h"
+#include <paradise/error.h>
+#include <paradise/kernel.h>
+#include <paradise/rb_tree.h>
+#include <paradise/terminal.h>
+#include <paradise/types.h>
 
 // See
 // https://dl.ebooksworld.ir/books/Introduction.to.Algorithms.4th.Leiserson.Stein.Rivest.Cormen.MIT.Press.9780262046305.EBooksWorld.ir.pdf

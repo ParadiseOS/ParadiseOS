@@ -1,10 +1,10 @@
-#include "timer.h"
-#include "interrupts/interrupt.h"
-#include "lib/error.h"
-#include "lib/types.h"
-#include "lib/util.h"
-#include "syscall/syscall.h"
-#include "terminal/terminal.h"
+#include <paradise/error.h>
+#include <paradise/interrupt.h>
+#include <paradise/syscall.h>
+#include <paradise/terminal.h>
+#include <paradise/timer.h>
+#include <paradise/types.h>
+#include <paradise/util.h>
 
 #define DEFAULT_SCHED_TICKS 10
 

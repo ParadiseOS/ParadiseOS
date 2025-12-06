@@ -1,4 +1,4 @@
-#include "util.h"
+#include <paradise/util.h>
 
 u16 get_pid_aid(u32 pid) {
     return pid >> 16;

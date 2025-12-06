@@ -1,13 +1,13 @@
-#include "mem.h"
-#include "boot/multiboot.h"
-#include "kernel/kernel.h"
-#include "lib/error.h"
-#include "lib/libp.h"
-#include "lib/logging.h"
-#include "lib/util.h"
-#include "memory/heap.h"
-#include "process/processes.h"
-#include "syscall/syscall.h"
+#include <paradise/error.h>
+#include <paradise/heap.h>
+#include <paradise/kernel.h>
+#include <paradise/libp.h>
+#include <paradise/logging.h>
+#include <paradise/mem.h>
+#include <paradise/multiboot.h>
+#include <paradise/processes.h>
+#include <paradise/syscall.h>
+#include <paradise/util.h>
 
 #define LOWER_MEM_PAGE_COUNT  256
 #define MAX_KERNEL_PAGE_COUNT 0x300 // last 3/4 of page table

@@ -1,19 +1,19 @@
-#include "processes.h"
-#include "drivers/timer/timer.h"
-#include "interrupts/interrupt.h"
-#include "ipc/mailbox.h"
-#include "kernel/kernel.h"
-#include "lib/error.h"
-#include "lib/libp.h"
-#include "lib/logging.h"
-#include "lib/util.h"
-#include "memory/heap.h"
-#include "memory/mem.h"
-#include "process/pool.h"
-#include "process/queue.h"
-#include "process/rb_tree.h"
-#include "sun/sun.h"
-#include "syscall/syscall.h"
+#include <paradise/error.h>
+#include <paradise/heap.h>
+#include <paradise/interrupt.h>
+#include <paradise/kernel.h>
+#include <paradise/libp.h>
+#include <paradise/logging.h>
+#include <paradise/mailbox.h>
+#include <paradise/mem.h>
+#include <paradise/pool.h>
+#include <paradise/processes.h>
+#include <paradise/queue.h>
+#include <paradise/rb_tree.h>
+#include <paradise/sun.h>
+#include <paradise/syscall.h>
+#include <paradise/timer.h>
+#include <paradise/util.h>
 
 #define MAILBOX_RESERVED  17
 #define STACK_SIZE        (4 * PAGE_SIZE)

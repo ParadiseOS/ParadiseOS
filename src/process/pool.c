@@ -1,6 +1,6 @@
-#include "pool.h"
-#include "lib/error.h"
-#include "memory/mem.h"
+#include <paradise/error.h>
+#include <paradise/mem.h>
+#include <paradise/pool.h>
 
 void pool_init(ProcessPool *pool) {
     pool->free_list = NULL;

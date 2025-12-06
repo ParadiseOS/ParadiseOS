@@ -1,7 +1,7 @@
-#include "lib/strings.h"
-#include "drivers/serial/io.h"
-#include "lib/util.h"
-#include "types.h"
+#include <paradise/serial.h>
+#include <paradise/strings.h>
+#include <paradise/types.h>
+#include <paradise/util.h>
 #include <stdarg.h>
 
 static const char HEX_DIGITS[] = "0123456789ABCDEF";

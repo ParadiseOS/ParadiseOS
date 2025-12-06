@@ -1,10 +1,10 @@
-#include "heap.h"
-#include "drivers/serial/io.h"
-#include "lib/error.h"
-#include "lib/libp.h"
-#include "lib/types.h"
-#include "memory/mem.h"
-#include "terminal/terminal.h"
+#include <paradise/error.h>
+#include <paradise/heap.h>
+#include <paradise/libp.h>
+#include <paradise/mem.h>
+#include <paradise/serial.h>
+#include <paradise/terminal.h>
+#include <paradise/types.h>
 
 #define HEAP_PAGE_FREE       0
 #define HEAP_PAGE_USED_RED   1

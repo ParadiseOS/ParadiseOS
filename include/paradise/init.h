@@ -1,8 +1,8 @@
 #ifndef INIT_H_
 #define INIT_H_
 
-#include "lib/types.h"
-#include "memory/mem.h"
+#include "mem.h"
+#include "types.h"
 
 // clang-format off
 /* Used for FLAG values for the segment descriptor stored in the GDT.

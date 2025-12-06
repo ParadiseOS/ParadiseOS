@@ -1,11 +1,11 @@
-#include "interrupt.h"
-#include "drivers/keyboard/keyboard.h"
-#include "kernel/init.h"
-#include "kernel/kernel.h"
-#include "lib/error.h"
-#include "lib/logging.h"
-#include "lib/util.h"
-#include "process/processes.h"
+#include <paradise/error.h>
+#include <paradise/init.h>
+#include <paradise/interrupt.h>
+#include <paradise/kernel.h>
+#include <paradise/keyboard.h>
+#include <paradise/logging.h>
+#include <paradise/processes.h>
+#include <paradise/util.h>
 
 extern u32 cpu_interrupts;
 

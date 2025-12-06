@@ -1,9 +1,9 @@
-#include "logging.h"
-#include "drivers/serial/io.h"
-#include "lib/strings.h"
-#include "lib/util.h"
-#include "terminal/terminal.h"
-#include "types.h"
+#include <paradise/logging.h>
+#include <paradise/serial.h>
+#include <paradise/strings.h>
+#include <paradise/terminal.h>
+#include <paradise/types.h>
+#include <paradise/util.h>
 #include <stdarg.h>
 
 static LogLevel LOGLEVEL = DEBUG;

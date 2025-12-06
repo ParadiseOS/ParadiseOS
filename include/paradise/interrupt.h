@@ -9,7 +9,7 @@
 #define PIC2_DATA    (PIC2 + 1)
 #define PIC_EOI      0x20 // End of interrupt signal
 
-#include "lib/types.h"
+#include "types.h"
 
 typedef enum {
     dpl_User = 3,
