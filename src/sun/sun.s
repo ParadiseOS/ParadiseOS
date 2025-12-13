@@ -1,6 +1,6 @@
 format ELF
 
-section ".data"
+section ".sun_blob"
 
 public sun_file
 sun_file:

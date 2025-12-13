@@ -1,12 +1,9 @@
+#include <paradise/logging.h>
 #include <paradise/error.h>
 #include <paradise/libp.h>
 #include <paradise/sun.h>
+#include <paradise/mem.h>
 
-typedef struct {
-    char magic[3];
-    u8 n;
-    TableEntry entries[];
-} SunFile;
 
 extern SunFile sun_file;
 
@@ -15,10 +12,14 @@ static u32 MAGIC_LEN = sizeof(MAGIC) - 1;
 
 void sun_init() {
     KERNEL_ASSERT(pmemeql(sun_file.magic, MAGIC, MAGIC_LEN));
+
+    //Assert the file ins't too large
+    KERNEL_ASSERT((sizeof(SunFile) + sizeof(TableEntry)) / PAGE_SIZE < MAX_SUNFILE_PAGES);
 }
 
 TableEntry *sun_exe_lookup(const char *name) {
     for (u8 i = 0; i < sun_file.n; ++i) {
+        printk(DEBUG, "Name: %s", sun_file.entries[i].name);
         if (pstreql(name, sun_file.entries[i].name))
             return sun_file.entries + i;
     }

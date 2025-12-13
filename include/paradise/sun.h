@@ -3,6 +3,9 @@
 
 #include "types.h"
 
+#define MAX_SUNFILE_PAGES 8 //Kernel assertion will fail if more than this number of pages is present
+
+
 typedef struct {
     char name[16];
     u32 offset;
@@ -12,6 +15,12 @@ typedef struct {
     u32 data_size;
     u32 bss_size;
 } TableEntry;
+
+typedef struct {
+    char magic[3];
+    u8 n;
+    TableEntry entries[];
+} SunFile;
 
 _Static_assert(sizeof(TableEntry) == 40, "Table entry size mismatch");
 
