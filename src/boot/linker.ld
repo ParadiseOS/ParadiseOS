@@ -25,6 +25,10 @@ SECTIONS {
         *(.data)
     }
 
+    .sun_blob ALIGN(4K) : AT(ADDR(.sun_blob) - 0xC0000000) {
+        *.(.sun_blob)
+    }
+
     .bss ALIGN(4K) : AT(ADDR (.bss) - 0xC0000000) {
         *(COMMON)
         *(.bss)

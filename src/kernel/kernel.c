@@ -76,8 +76,12 @@ void kernel_main(void) {
     // Add your processes here
     // ex. exec_sun("binary.out", 0)
 
+    u32 pid = exec_sun("process.out", 0, true);
+    KERNEL_ASSERT( pid = (1 << 16) ); // Process server is PID 1
+
     asm("sti");
 
+    // Jump into process-server change this away from schedule
     schedule();
 
     for (;;) {

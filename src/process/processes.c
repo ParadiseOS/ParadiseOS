@@ -21,6 +21,7 @@
 #define PROCESS_ORG       ((void *) 0x420000)
 #define MAILBOX_DATA_ADDR (PROCESS_ORG - (PAGE_SIZE * MAILBOX_RESERVED))
 #define PCB_ADDR          (MAILBOX_DATA_ADDR - PAGE_SIZE)
+#define SYSTEM_PAGES      (PCB_ADDR - PAGE_SIZE * MAX_SUNFILE_PAGES) // TODO: Allocate pages
 
 #define INIT_EFLAGS 0b1000000010
 
@@ -35,6 +36,8 @@ u16 aid_counter = 1; // Start PIDs at the Most Sig 16 Bits
 
 ProcessControlBlock *pcb = PCB_ADDR;
 MailboxPage *mailbox_data = MAILBOX_DATA_ADDR;
+
+extern SunFile sun_file;
 
 __attribute__((noreturn)) extern void
 jump_usermode(void (*f)(), void *stack, ProcessControlBlock *pcb);
@@ -78,12 +81,31 @@ static u32 next_free_aid() {
     KERNEL_ASSERT(false); // Too many processes
 }
 
+void map_sunfile() { 
+
+    void * sun_file_vaddr = (void*) &sun_file; // check this
+    void * proc_sys_file  = (void*) SYSTEM_PAGES;
+    u32 pages = (u32) (sizeof(SunFile) + sizeof(TableEntry)) / PAGE_SIZE;
+
+    alloc_pages(SYSTEM_PAGES, PAGE_USER_MODE, MAX_SUNFILE_PAGES);
+
+    for (u32 i=0; i<pages; ++i) {
+        void * proc_page = proc_sys_file  + (i * PAGE_SIZE);
+        void * sun_page  = sun_file_vaddr + (i * PAGE_SIZE);
+        KERNEL_ASSERT(
+            !map_page(proc_page, get_paddr(get_entry(sun_page)), PAGE_USER_MODE)
+        );
+    }
+}
+
 #define RO_FLAGS PAGE_USER_MODE
 #define RW_FLAGS (PAGE_WRITABLE | PAGE_USER_MODE)
 
-void exec_sun(const char *name, int arg) {
+int exec_sun(const char *name, int arg, bool map_system) {
     TableEntry *entry = sun_exe_lookup(name);
 
+    printk(DEBUG, "TableEntry %p\n", entry);
+    printk(DEBUG, "Text Size %u\n", entry->text_size);
     KERNEL_ASSERT(entry && entry->text_size);
 
     void *text = PROCESS_ORG;
@@ -126,6 +148,11 @@ void exec_sun(const char *name, int arg) {
     mailbox_init(&pcb->mailbox, mailbox_data, PAGE_WRITABLE);
     heap_init(&pcb->heap, heap, heap_pages, PAGE_WRITABLE | PAGE_USER_MODE);
 
+    //Map certain system structs into memory
+    if (map_system) {
+        map_sunfile(); // Puts the sunfile into the 
+    }
+
     set_page_dir(old_page_dir);
 
     u32 pid = next_free_aid();
@@ -134,6 +161,8 @@ void exec_sun(const char *name, int arg) {
     p->blocked = false;
     rb_insert(&process_tree, &p->rb_node, pid);
     queue_add(&run_queue, &p->queue_node);
+
+    return pid;
 }
 
 void schedule() {
