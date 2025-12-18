@@ -99,8 +99,6 @@ void map_sunfile() {
 int exec_sun(const char *name, int arg, bool map_system) {
     TableEntry *entry = sun_exe_lookup(name);
 
-    printk(DEBUG, "TableEntry %p\n", entry);
-    printk(DEBUG, "Text Size %u\n", entry->text_size);
     KERNEL_ASSERT(entry && entry->text_size);
 
     void *text = PROCESS_ORG;
@@ -137,9 +135,6 @@ int exec_sun(const char *name, int arg, bool map_system) {
     pcb->eflags = INIT_EFLAGS;
     pcb->page_dir_paddr = page_dir;
     pcb->eax = arg;
-
-    printk(DEBUG, "stack: %x\n", pcb->esp);
-    printk(DEBUG, "eip: %x\n", pcb->eip);
 
     pmemset(pcb->fpu_regs, 0, /*fpu_regs size*/ 512);
 
