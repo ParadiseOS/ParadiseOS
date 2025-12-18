@@ -1,0 +1,4 @@
+target remote localhost:1234
+symbol-file build/paradise-os.bin
+symbol-file elf2sun/build/syscalls.out
+directory elf2sun/programs/syscalls

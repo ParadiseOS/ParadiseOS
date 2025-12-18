@@ -21,7 +21,8 @@
 #define PROCESS_ORG       ((void *) 0x420000)
 #define MAILBOX_DATA_ADDR (PROCESS_ORG - (PAGE_SIZE * MAILBOX_RESERVED))
 #define PCB_ADDR          (MAILBOX_DATA_ADDR - PAGE_SIZE)
-#define SYSTEM_PAGES      (PCB_ADDR - PAGE_SIZE * MAX_SUNFILE_PAGES) // TODO: Allocate pages
+#define SYSTEM_PAGES                                                           \
+    (PCB_ADDR - PAGE_SIZE * MAX_SUNFILE_PAGES) // TODO: Allocate pages
 
 #define INIT_EFLAGS 0b1000000010
 
@@ -81,21 +82,15 @@ static u32 next_free_aid() {
     KERNEL_ASSERT(false); // Too many processes
 }
 
-void map_sunfile() { 
+void map_sunfile() {
 
-    void * sun_file_vaddr = (void*) &sun_file; // check this
-    void * proc_sys_file  = (void*) SYSTEM_PAGES;
-    u32 pages = (u32) (sizeof(SunFile) + sizeof(TableEntry)) / PAGE_SIZE;
-
-    alloc_pages(SYSTEM_PAGES, PAGE_USER_MODE, MAX_SUNFILE_PAGES);
-
-    for (u32 i=0; i<pages; ++i) {
-        void * proc_page = proc_sys_file  + (i * PAGE_SIZE);
-        void * sun_page  = sun_file_vaddr + (i * PAGE_SIZE);
-        KERNEL_ASSERT(
-            !map_page(proc_page, get_paddr(get_entry(sun_page)), PAGE_USER_MODE)
-        );
-    }
+    void *sun_file_vaddr = (void *) &sun_file; 
+    void *proc_sys_file = (void *) SYSTEM_PAGES;
+    u32 size = sunfile_size();
+    u32 pages = (u32) (size + PAGE_SIZE - 1) / PAGE_SIZE; 
+    map_pages(
+        proc_sys_file, get_paddr(get_entry(sun_file_vaddr)), PAGE_USER_MODE, pages
+    );
 }
 
 #define RO_FLAGS PAGE_USER_MODE
@@ -143,15 +138,18 @@ int exec_sun(const char *name, int arg, bool map_system) {
     pcb->page_dir_paddr = page_dir;
     pcb->eax = arg;
 
+    printk(DEBUG, "stack: %x\n", pcb->esp);
+    printk(DEBUG, "eip: %x\n", pcb->eip);
+
     pmemset(pcb->fpu_regs, 0, /*fpu_regs size*/ 512);
 
     mailbox_init(&pcb->mailbox, mailbox_data, PAGE_WRITABLE);
     heap_init(&pcb->heap, heap, heap_pages, PAGE_WRITABLE | PAGE_USER_MODE);
 
-    //Map certain system structs into memory
-    if (map_system) {
-        map_sunfile(); // Puts the sunfile into the 
-    }
+    // Map certain system structs into memory
+    // if (map_system) {
+    //     map_sunfile(); // Puts the sunfile into the
+    // }
 
     set_page_dir(old_page_dir);
 
