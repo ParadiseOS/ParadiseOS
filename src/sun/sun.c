@@ -19,7 +19,6 @@ void sun_init() {
 
 TableEntry *sun_exe_lookup(const char *name) {
     for (u8 i = 0; i < sun_file.n; ++i) {
-        printk(DEBUG, "Name: %s", sun_file.entries[i].name);
         if (pstreql(name, sun_file.entries[i].name))
             return sun_file.entries + i;
     }

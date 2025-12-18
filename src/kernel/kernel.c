@@ -81,8 +81,6 @@ void kernel_main(void) {
     u32 pid = exec_sun("process.out", 0, true);
     KERNEL_ASSERT( pid = (1 << 16) ); // Process server is PID 1
 
-    printk(DEBUG, "HEY HO\n");
-
     asm("sti");
 
     // Jump into process-server change this away from schedule
