@@ -1,3 +1,4 @@
+#include <paradise/types.h>
 #include <paradise/error.h>
 #include <paradise/init.h>
 #include <paradise/interrupt.h>
@@ -19,6 +20,7 @@ const u32 kernel_start_paddr = (u32) &_kernel_start_paddr;
 const void *kernel_start_vaddr = &_kernel_start_vaddr;
 const u32 kernel_end_paddr = (u32) &_kernel_end_paddr;
 const void *kernel_end_vaddr = &_kernel_end_vaddr;
+
 
 void kernel_main(void) {
     if (!(multiboot_info->flags & MB_FLAG_FRAMEBUFFER)) {
@@ -78,6 +80,8 @@ void kernel_main(void) {
 
     u32 pid = exec_sun("process.out", 0, true);
     KERNEL_ASSERT( pid = (1 << 16) ); // Process server is PID 1
+
+    printk(DEBUG, "HEY HO\n");
 
     asm("sti");
 

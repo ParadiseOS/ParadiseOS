@@ -29,5 +29,6 @@ TableEntry *sun_exe_lookup(const char *name);
 void sun_load_text(TableEntry *entry, u8 *buffer);
 void sun_load_rodata(TableEntry *entry, u8 *buffer);
 void sun_load_data(TableEntry *entry, u8 *buffer);
+u32 sunfile_size();
 
 #endif // SUN_H_
