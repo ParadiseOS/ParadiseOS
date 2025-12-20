@@ -52,5 +52,6 @@ int exec_sun(const char *name, int arg, bool map_system);
 __attribute__((noreturn)) void schedule();
 void processes_init();
 Process *get_process(u16 aid);
+u32 jump_process(u32 pid);
 
 #endif
