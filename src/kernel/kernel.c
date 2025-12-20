@@ -1,4 +1,3 @@
-#include <paradise/types.h>
 #include <paradise/error.h>
 #include <paradise/init.h>
 #include <paradise/interrupt.h>
@@ -15,12 +14,12 @@
 #include <paradise/terminal.h>
 #include <paradise/testing.h>
 #include <paradise/timer.h>
+#include <paradise/types.h>
 
 const u32 kernel_start_paddr = (u32) &_kernel_start_paddr;
 const void *kernel_start_vaddr = &_kernel_start_vaddr;
 const u32 kernel_end_paddr = (u32) &_kernel_end_paddr;
 const void *kernel_end_vaddr = &_kernel_end_vaddr;
-
 
 void kernel_main(void) {
     if (!(multiboot_info->flags & MB_FLAG_FRAMEBUFFER)) {
@@ -78,13 +77,16 @@ void kernel_main(void) {
     // Add your processes here
     // ex. exec_sun("binary.out", 0)
 
-    u32 pid = exec_sun("process.out", 0, true);
-    KERNEL_ASSERT( pid = (1 << 16) ); // Process server is PID 1
+    u32 proc_pid = exec_sun("process.out", 0, true);
+    KERNEL_ASSERT(proc_pid = (1 << 16)); // Process server is PID 1
+
+    exec_sun("screamer.out", 0, true); // Register our other file
 
     asm("sti");
 
     // Jump into process-server change this away from schedule
-    schedule();
+    // schedule();
+    KERNEL_ASSERT(!jump_process(proc_pid)); // Jump into the process server
 
     for (;;) {
         asm("hlt");

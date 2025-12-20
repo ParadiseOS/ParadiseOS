@@ -15,6 +15,8 @@
 #include <paradise/timer.h>
 #include <paradise/util.h>
 
+#define ROOT_PROCESS 1 << 16
+
 #define MAILBOX_RESERVED  17
 #define STACK_SIZE        (4 * PAGE_SIZE)
 #define STACK_TOP         ((void *) 0xbfc00000)
@@ -84,12 +86,14 @@ static u32 next_free_aid() {
 
 void map_sunfile() {
 
-    void *sun_file_vaddr = (void *) &sun_file; 
+    void *sun_file_vaddr = (void *) &sun_file;
     void *proc_sys_file = (void *) SYSTEM_PAGES;
     u32 size = sunfile_size();
-    u32 pages = (u32) (size + PAGE_SIZE - 1) / PAGE_SIZE; 
+    u32 pages = (u32) (size + PAGE_SIZE - 1) / PAGE_SIZE;
+    printk(DEBUG, "MAPPING %p into user space\n", proc_sys_file);
     map_pages(
-        proc_sys_file, get_paddr(get_entry(sun_file_vaddr)), PAGE_USER_MODE, pages
+        proc_sys_file, get_paddr(get_entry(sun_file_vaddr)), PAGE_USER_MODE,
+        pages
     );
 }
 
@@ -142,9 +146,9 @@ int exec_sun(const char *name, int arg, bool map_system) {
     heap_init(&pcb->heap, heap, heap_pages, PAGE_WRITABLE | PAGE_USER_MODE);
 
     // Map certain system structs into memory
-    // if (map_system) {
-    //     map_sunfile(); // Puts the sunfile into the
-    // }
+    if (map_system) {
+        map_sunfile(); // Puts the sunfile into the
+    }
 
     set_page_dir(old_page_dir);
 
@@ -198,13 +202,25 @@ bool is_user_mode(u32 cs) {
     return (cs & 3) == 3;
 }
 
+// TODO: Think more about this?
+//  Will the process servers stack continously grow?
 void preempt(InterruptRegisters *regs) {
     if (is_user_mode(regs->cs)) {
         KERNEL_ASSERT(pcb->page_dir_paddr == current->page_dir_paddr);
         save_context_int(regs);
-        queue_add(&run_queue, &current->queue_node);
-        pic_eoi(regs->int_no - 32);
-        schedule();
+        pic_eoi(regs->int_no - 32); // Enable Interrupts again
+        toggle_timer_callback(false
+        ); // Turn Timer Callbacks off (enabled after next jump_proc syscall)
+
+        Process *proc = get_process(get_pid_aid(ROOT_PROCESS));
+        KERNEL_ASSERT(proc);
+
+        current = proc;
+        set_page_dir(proc->page_dir_paddr);
+
+        jump_usermode(
+            (void (*)()) last_callback, (void *) pcb->esp, pcb
+        ); // last callback since we disabled timer
     }
     else {
         pic_eoi(regs->int_no - 32);
@@ -257,14 +273,25 @@ SyscallResult syscall_send_message(
     SYSCALL_RET(0);
 }
 
+#define PID_NOT_FOUND 1
+u32 jump_process(u32 pid) {
+    Process *proc = get_process(get_pid_aid(pid));
+    if (proc) {
+        current = proc;
+        set_page_dir(proc->page_dir_paddr);
+        fpu_restore(pcb->fpu_regs);
+        jump_usermode((void (*)()) pcb->eip, (void *) pcb->esp, pcb);
+    }
+
+    return PID_NOT_FOUND;
+}
+
 SyscallResult syscall_register_process() {
     Process *p = pool_create(&process_pool);
     u32 pid = process_init(p, 0);
     rb_insert(&process_tree, &p->rb_node, pid);
     SYSCALL_RET(pid);
 }
-
-#define PID_NOT_FOUND 1
 
 SyscallResult syscall_delete_process(u32 pid) {
     Process *proc = get_process(get_pid_aid(pid));
@@ -279,16 +306,8 @@ SyscallResult syscall_delete_process(u32 pid) {
 }
 
 SyscallResult syscall_jump_process(u32 pid) {
-
-    Process *proc = get_process(get_pid_aid(pid));
-    if (proc) {
-        current = proc;
-        set_page_dir(proc->page_dir_paddr);
-        fpu_restore(pcb->fpu_regs);
-        jump_usermode((void (*)()) pcb->eip, (void *) pcb->esp, pcb);
-    }
-
-    SYSCALL_ERR(PID_NOT_FOUND);
+    toggle_timer_callback(true);
+    SYSCALL_ERR(jump_process(pid));
 }
 
 SyscallResult syscall_read_message(
@@ -309,10 +328,12 @@ SyscallResult syscall_read_message(
 }
 
 void processes_init() {
-    syscall_reg_tmr_cb(preempt, 20 /*ms*/);
+    // syscall_reg_tmr_cb(preempt, 20 /*ms*/);
     pool_init(&process_pool);
     rb_init(&process_tree);
     queue_init(&run_queue);
+
+    printk(DEBUG, "%p", (void *) SYSTEM_PAGES);
 
     register_syscall(0, syscall_send_message);
     register_syscall(1, syscall_read_message);
