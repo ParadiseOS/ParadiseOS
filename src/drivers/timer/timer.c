@@ -23,13 +23,12 @@ void preempt(InterruptRegisters *regs
 ); // used to store the state of the last process
 
 void timer_handler(InterruptRegisters *regs) {
+    pic_eoi(regs->int_no - 32); // Enable Interrupts again
     if (sched_tick_cur == 0) {
         sched_tick_cur = sched_ticks;
         if (sched_callback) {
+            toggle_timer_callback(false); // Turn Timer Callbacks off 
             preempt(regs);
-        }
-        else {
-            pic_eoi(regs->int_no - 32); // Enable Interrupts again
         }
     }
     ++system_ticks;
