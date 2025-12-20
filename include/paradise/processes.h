@@ -48,7 +48,7 @@ typedef struct {
 extern Process *current;
 extern CpuContext *current_ctx;
 
-int exec_sun(const char *name, int arg, bool map_system);
+u32 exec_sun(const char *name, int arg, bool map_system);
 __attribute__((noreturn)) void schedule();
 void processes_init();
 Process *get_process(u16 aid);
