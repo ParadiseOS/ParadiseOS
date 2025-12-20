@@ -100,7 +100,7 @@ void map_sunfile() {
 #define RO_FLAGS PAGE_USER_MODE
 #define RW_FLAGS (PAGE_WRITABLE | PAGE_USER_MODE)
 
-int exec_sun(const char *name, int arg, bool map_system) {
+u32 exec_sun(const char *name, int arg, bool map_system) {
     TableEntry *entry = sun_exe_lookup(name);
 
     KERNEL_ASSERT(entry && entry->text_size);
