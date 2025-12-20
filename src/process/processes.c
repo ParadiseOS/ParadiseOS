@@ -219,9 +219,6 @@ void preempt(InterruptRegisters *regs) {
             (void (*)()) last_callback, (void *) pcb->esp, pcb
         ); // last callback since we disabled timer
     }
-    else {
-        pic_eoi(regs->int_no - 32);
-    }
 }
 
 u32 process_init(Process *p, u32 pid) {
