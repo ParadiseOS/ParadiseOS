@@ -208,9 +208,6 @@ void preempt(InterruptRegisters *regs) {
     if (is_user_mode(regs->cs)) {
         KERNEL_ASSERT(pcb->page_dir_paddr == current->page_dir_paddr);
         save_context_int(regs);
-        pic_eoi(regs->int_no - 32); // Enable Interrupts again
-        toggle_timer_callback(false
-        ); // Turn Timer Callbacks off (enabled after next jump_proc syscall)
 
         Process *proc = get_process(get_pid_aid(ROOT_PROCESS));
         KERNEL_ASSERT(proc);
