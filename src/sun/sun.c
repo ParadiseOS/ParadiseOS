@@ -14,7 +14,7 @@ void sun_init() {
     KERNEL_ASSERT(pmemeql(sun_file.magic, MAGIC, MAGIC_LEN));
 
     //Assert the file ins't too large
-    KERNEL_ASSERT((sizeof(SunFile) + sizeof(TableEntry)) / PAGE_SIZE < MAX_SUNFILE_PAGES);
+    KERNEL_ASSERT(sunfile_size() / PAGE_SIZE < MAX_SUNFILE_PAGES);
 }
 
 TableEntry *sun_exe_lookup(const char *name) {
