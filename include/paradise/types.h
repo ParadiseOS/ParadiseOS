@@ -24,4 +24,22 @@ typedef double   f64;
 #define INFINITY     (1.0f / 0.0f)
 #define NEG_INFINITY (-INFINITY)
 
+#define U64_MAX 18446744073709551615
+#define I64_MAX 9223372036854775805
+#define U32_MAX 4294967295
+#define I32_MAX 2147483647
+#define U16_MAX 65535
+#define I16_MAX 32767
+#define U8_MAX  255
+#define I8_MAX  127
+
+#define U64_MIN 0
+#define I64_MIN -9223372036854775805
+#define U32_MIN 0
+#define I32_MIN -2147483647
+#define U16_MIN 0
+#define I16_MIN -32767
+#define U8_MIN  0
+#define I8_MIN  -127
+
 #endif // TYPES_H_

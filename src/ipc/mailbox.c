@@ -6,7 +6,7 @@
 #include <paradise/util.h>
 
 void *page_ptr(void *addr) {
-    return (void *) (((u32) addr >> 12) << 12 /* Page Size Bits */);
+    return (void *) ((u32) addr & 0xFFFFF000); // Mask out Page Offset
 }
 
 // Links tgt page to src physical frame
@@ -14,6 +14,16 @@ void link_page(void *tgt, void *src) {
     KERNEL_ASSERT(
         !map_page(tgt, get_paddr(get_entry(src)), get_flags(get_entry(src)))
     );
+}
+
+// Returns pointer to next page of page_ptr (for readability)
+static void *next_page(void *page_ptr) {
+    return page_ptr + PAGE_SIZE;
+}
+
+// Returns pointer to next n pages of page_ptr
+static void *next_n_pages(void *page_ptr, u32 n) {
+    return page_ptr + (n * PAGE_SIZE);
 }
 
 static void bytes_to_message_header(
@@ -37,11 +47,18 @@ u16 message_cleanup(MailboxHeader *mailbox) {
     MailboxMessageHeader header;
     void *tmp_header = mailbox->head;
     bytes_to_message_header(&header, tmp_header);
+
     while (header.sender_pid == 0 && header.reader_pid == 0 &&
            seen_size < mailbox->used_size) {
-        cleaned_up_bytes += sizeof(MailboxMessageHeader) + header.data_size;
-        seen_size += cleaned_up_bytes;
-        tmp_header += cleaned_up_bytes;
+        u16 read_bytes = sizeof(MailboxMessageHeader) + header.data_size;
+        cleaned_up_bytes += read_bytes;
+        seen_size += read_bytes;
+        tmp_header += read_bytes;
+        // Ensure tmp header is never on link page
+        if (page_ptr(tmp_header) == mailbox->link_page) {
+            u32 page_offset = (u32) tmp_header % PAGE_SIZE;
+            tmp_header = mailbox->first_page + page_offset;
+        }
         bytes_to_message_header(&header, tmp_header);
     }
     return cleaned_up_bytes;
@@ -50,38 +67,67 @@ u16 message_cleanup(MailboxHeader *mailbox) {
 void mailbox_init(
     MailboxHeader *mailbox, void *mailbox_start_addr, u16 page_flags
 ) {
-    mailbox->capacity = MAILBOX_DATA_SIZE;
+    mailbox->capacity = MAILBOX_DATA_SIZE - 1; // Account for overflow
     mailbox->unread_size = 0;
     mailbox->used_size = 0;
     mailbox->head = mailbox_start_addr;
     mailbox->tail = mailbox_start_addr;
     mailbox->first_page = mailbox_start_addr;
     mailbox->last_page = mailbox_start_addr;
-    mailbox->copy_page = mailbox->last_page + PAGE_SIZE;
+    mailbox->link_page = mailbox->last_page + PAGE_SIZE;
     alloc_page(mailbox_start_addr, page_flags);
-    link_page(mailbox->copy_page, mailbox->first_page);
+    link_page(mailbox->link_page, mailbox->first_page);
 }
 
-// todo implement
 void mailbox_del(MailboxHeader *mailbox) {
-    (void) mailbox;
-    // Should unmap and deallocate all mailbox pages for the given mailbox.
+    // Unmap link Page
+    KERNEL_ASSERT(!unmap_page(mailbox->link_page, NULL));
+
+    // Free frames of data pages
+    u32 mailbox_page_count = mailbox->capacity / PAGE_SIZE;
+    free_pages(mailbox->first_page, mailbox_page_count);
 }
 
-// todo implement
+// Grows the mailbox by inserting a new page after tail.
 bool mailbox_grow(MailboxHeader *mailbox) {
-    (void) mailbox;
+    if (mailbox->capacity == U16_MAX)
+        return false;
 
-    // potential implementation
-    // unmap copy page
-    // alloc new page at that address
-    // map next copy page to the following page
-    // increase capacities and such
+    // Allocate new page
+    u16 page_flags = get_flags(get_entry(mailbox->first_page));
+    alloc_page(next_page(mailbox->link_page), page_flags);
 
-    return false; //* no-op
+    u32 pages_shifted =
+        (page_ptr(mailbox->link_page) - page_ptr(mailbox->tail)) / PAGE_SIZE;
+    while (pages_shifted) {
+        void *prev = next_n_pages(mailbox->tail, pages_shifted);
+        void *new = next_n_pages(mailbox->tail, pages_shifted + 1);
+        swap_page_frames(prev, new);
+        pages_shifted--;
+    }
+
+    // Shift over pointers
+    mailbox->link_page = next_page(mailbox->link_page);
+    mailbox->last_page = next_page(mailbox->last_page);
+
+    // Head is shifted over
+    if (mailbox->head > mailbox->tail) {
+        if (page_ptr(mailbox->head) == page_ptr(mailbox->tail)) {
+            // If head and tail are on the same page, copy head data to new page
+            u32 head_page_offset = (u32) mailbox->head % PAGE_SIZE;
+            pmemcpy(
+                next_page(mailbox->head), mailbox->head,
+                PAGE_SIZE - head_page_offset
+            );
+        }
+        mailbox->head = next_page(mailbox->head);
+    }
+
+    mailbox->capacity += MAILBOX_DATA_SIZE;
+    return true;
 }
 
-int mailbox_send_message(
+i32 mailbox_send_message(
     MailboxHeader *mailbox, u32 sender_pid, u32 reader_pid, u8 data_size,
     const void *data
 ) {
@@ -94,9 +140,8 @@ int mailbox_send_message(
     // Resize mailbox if message is too large
     if (mailbox->used_size + message_header_size + data_size >
         mailbox->capacity) {
-        bool mailbox_grew = mailbox_grow(mailbox);
-        if (!mailbox_grew)
-            return false; // Mailbox at max capacity.
+        if (!mailbox_grow(mailbox))
+            return ERR_FULL_MAILBOX; // Mailbox at max capacity.
     }
 
     pmemcpy(mailbox->tail, &message_header, message_header_size);
@@ -105,12 +150,13 @@ int mailbox_send_message(
     mailbox->tail += data_size;
 
     // Ensure tail is never on copypage
-    if (page_ptr(mailbox->tail) == mailbox->copy_page) {
-        u32 page_offset = ((u32) mailbox->tail << 20) >> 20;
+    if (page_ptr(mailbox->tail) == mailbox->link_page) {
+        u32 page_offset = (u32) mailbox->tail % PAGE_SIZE;
         mailbox->tail = mailbox->first_page + page_offset;
     }
     mailbox->used_size += message_header_size + data_size;
-    return true;
+    mailbox->unread_size += message_header_size + data_size;
+    return data_size;
 }
 
 bool match_pid(u32 field_pid, u32 target_pid) {
@@ -123,7 +169,7 @@ bool match_pid(u32 field_pid, u32 target_pid) {
     return field_pid == target_pid;
 }
 
-int mailbox_read_message(
+i32 mailbox_read_message(
     MailboxHeader *mailbox, u32 sender_pid, u32 reader_pid,
     MailboxMessage *message
 ) {
@@ -143,29 +189,28 @@ int mailbox_read_message(
     }
 
     if (seen_size >= mailbox->used_size)
-        return 0;
+        return ERR_NO_MESSAGE;
 
-    // Search read the message into message
+    // Pass found message to pointer
     bytes_to_message(message, current_message);
     mailbox->unread_size -= total_message_size;
-    pmemset(current_message, 0, 8);
+    pmemset(current_message, 0, 8); // clear pids to set as read
 
     // Cleanup read messages
     u16 clean_up_size = message_cleanup(mailbox);
     mailbox->used_size -= clean_up_size;
     mailbox->head += clean_up_size;
-    printk(DEBUG, "Cleanup size - %u\n", clean_up_size);
 
     // Ensure head is never on copy page
-    if (page_ptr(mailbox->head) == mailbox->copy_page) {
-        u32 page_offset = ((u32) mailbox->head << 20) >> 20;
+    if (page_ptr(mailbox->head) == mailbox->link_page) {
+        u32 page_offset = (u32) mailbox->head % PAGE_SIZE;
         mailbox->head = mailbox->first_page + page_offset;
     }
 
-    return 1;
+    return message->header.data_size;
 }
 
-int send_signal(u8 signal_num) {
+i32 send_signal(u8 signal_num) {
     printk(DEBUG, "signal %u received...\n", signal_num);
     return 0; // No-op for now
 }

@@ -11,6 +11,10 @@
 #define MAILBOX_DATA_SIZE PAGE_SIZE
 #define MAX_MESSAGE_SIZE  255
 
+// Mailbox Errors (until syscall_errno)
+#define ERR_NO_MESSAGE   -1
+#define ERR_FULL_MAILBOX -2
+
 // Send Message Syscall Flags
 #define IPC_SIGNAL (1 << 0)
 
@@ -25,7 +29,7 @@ typedef struct {
     u16 capacity;
     void *first_page;
     void *last_page;
-    void *copy_page;
+    void *link_page;
     // MailboxPage Structure should always be contigious.
 } MailboxHeader;
 
@@ -53,18 +57,18 @@ void mailbox_init(
 void mailbox_del(MailboxHeader *mailbox);
 
 // Sends a message to a mailbox
-int mailbox_send_message(
+i32 mailbox_send_message(
     MailboxHeader *mailbox, u32 sender_pid, u32 reader_pid, u8 data_size,
     const void *data
 );
 
 // Reads messages from sender & reader of mailbox
-int mailbox_read_message(
+i32 mailbox_read_message(
     MailboxHeader *mailbox, u32 sender_pid, u32 reader_pid,
     MailboxMessage *message
 );
 
 // sends a signal to a process
-int send_signal(u8 signal_num);
+i32 send_signal(u8 signal_num);
 
 #endif // MAILBOX_H_

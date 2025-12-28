@@ -202,6 +202,7 @@ u32 process_init(Process *p, u32 pid) {
 SyscallResult syscall_send_message(
     u32 reader_pid, u32 data_size, const char *data, u32 flags
 ) {
+    i32 res;
     u8 message_size = data_size & 0xFF;
     char message_cpy[256];
     pmemcpy(message_cpy, data, message_size);
@@ -210,14 +211,15 @@ SyscallResult syscall_send_message(
 
     // Switch address space
     Process *dst = get_process(get_pid_aid(reader_pid));
-    KERNEL_ASSERT(dst); // Todo: Turn this into an error
+    if (dst == NULL)
+        SYSCALL_ERR(1); // PID doesn't exist
     set_page_dir(dst->page_dir_paddr);
 
     if (flags & IPC_SIGNAL) {
-        send_signal(message_cpy[0]);
+        res = send_signal(message_cpy[0]);
     }
     else {
-        mailbox_send_message(
+        res = mailbox_send_message(
             &pcb->mailbox, sender_pid, reader_pid, message_size, message_cpy
         );
     }
@@ -232,7 +234,9 @@ SyscallResult syscall_send_message(
 
     // Switch back address space
     set_page_dir(current->page_dir_paddr);
-    SYSCALL_RET(0);
+    if (res < 0)
+        SYSCALL_ERR(-res);
+    SYSCALL_RET(res);
 }
 
 SyscallResult syscall_register_process() {
@@ -272,8 +276,8 @@ SyscallResult syscall_jump_process(u32 pid) {
 SyscallResult syscall_read_message(
     u32 sender_pid, u32 reader_pid, MailboxMessage *message, u32 flags
 ) {
-    bool res =
-        mailbox_read_message(&pcb->mailbox, sender_pid, reader_pid, message);
+    i32 res;
+    res = mailbox_read_message(&pcb->mailbox, sender_pid, reader_pid, message);
 
     (void) flags;
 
@@ -283,6 +287,9 @@ SyscallResult syscall_read_message(
     //     blocked current->blocked = true; save_context_syscall(current_ctx);
     //     schedule();
     // }
+
+    if (res < 0)
+        SYSCALL_ERR(-res);
     SYSCALL_RET(res);
 }
 
