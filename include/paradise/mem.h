@@ -38,7 +38,9 @@ void print_frame_usage();
 void mem_init();
 u32 alloc_frame();
 RESULT map_page(void *vaddr, u32 paddr, u16 flags);
+RESULT unmap_page(void *vaddr, u32 *entry);
 void map_pages(void *vaddr, u32 paddr, u16 flags, u32 count);
+void unmap_pages(void *vaddr, u32 count);
 void swap_page_frames(void *vaddr1, void *vaddr2);
 
 u32 new_page_dir();
