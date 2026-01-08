@@ -33,7 +33,7 @@ typedef struct {
 
     MailboxHeader mailbox;
 
-    Heap heap;
+    //Heap heap;
 } ProcessControlBlock;
 
 _Static_assert(sizeof(ProcessControlBlock) <= PAGE_SIZE, "PCB too large");

@@ -14,6 +14,7 @@
 #include <paradise/syscall.h>
 #include <paradise/timer.h>
 #include <paradise/util.h>
+#include <paradise/shared/system.h>
 
 #define ROOT_PROCESS 1 << 16
 
@@ -23,8 +24,9 @@
 #define PROCESS_ORG       ((void *) 0x420000)
 #define MAILBOX_DATA_ADDR (PROCESS_ORG - (PAGE_SIZE * MAILBOX_RESERVED))
 #define PCB_ADDR          (MAILBOX_DATA_ADDR - PAGE_SIZE)
-#define SYSTEM_PAGES                                                           \
-    (PCB_ADDR - PAGE_SIZE * MAX_SUNFILE_PAGES) // TODO: Allocate pages
+#define SYSTEM_PAGE       (PCB_ADDR - PAGE_SIZE)
+#define SUNFILE_PAGES                                                           \
+    (SYSTEM_PAGE - PAGE_SIZE * MAX_SUNFILE_PAGES) // TODO: Allocate pages
 
 #define INIT_EFLAGS 0b1000000010
 
@@ -87,7 +89,7 @@ static u32 next_free_aid() {
 void map_sunfile() {
 
     void *sun_file_vaddr = (void *) &sun_file;
-    void *proc_sys_file = (void *) SYSTEM_PAGES;
+    void *proc_sys_file = (void *) SUNFILE_PAGES;
     u32 size = sunfile_size();
     u32 pages = (u32) (size + PAGE_SIZE - 1) / PAGE_SIZE;
     printk(DEBUG, "MAPPING %p into user space\n", proc_sys_file);
@@ -104,6 +106,8 @@ u32 exec_sun(const char *name, int arg, bool map_system) {
     TableEntry *entry = sun_exe_lookup(name);
 
     KERNEL_ASSERT(entry && entry->text_size);
+
+    u32 pid = next_free_aid(); //TODO: Refactor to use proper vocab
 
     void *text = PROCESS_ORG;
     void *rodata = align_next_page(text + entry->text_size - 1);
@@ -127,11 +131,25 @@ u32 exec_sun(const char *name, int arg, bool map_system) {
         alloc_pages(bss, RW_FLAGS, (heap - bss) / PAGE_SIZE);
     alloc_pages(stack - STACK_SIZE, RW_FLAGS, STACK_SIZE / PAGE_SIZE);
     alloc_pages(pcb, PAGE_WRITABLE, 1);
+    alloc_pages(SYSTEM_PAGE, RO_FLAGS, 1); 
 
     sun_load_text(entry, text);
     sun_load_rodata(entry, rodata);
     sun_load_data(entry, data);
     pmemset(bss, 0, entry->bss_size);
+
+    //push SYSTEM PAGE location onto stack
+    stack -= 4;
+    *(SystemInfo **)(stack) = SYSTEM_PAGE;
+
+    SystemInfo * sys = SYSTEM_PAGE;
+    sys->pid = pid;
+    sys->page_size  = PAGE_SIZE;
+    sys->stack_top  = STACK_TOP;
+    sys->stack_size = STACK_SIZE;
+    sys->heap_start = heap;
+    sys->heap_pages = heap_pages;
+    sys->sunfile    = SUNFILE_PAGES;
 
     pcb->prog_brk = heap;
     pcb->eip = (u32) entry->entry_point;
@@ -143,7 +161,7 @@ u32 exec_sun(const char *name, int arg, bool map_system) {
     pmemset(pcb->fpu_regs, 0, /*fpu_regs size*/ 512);
 
     mailbox_init(&pcb->mailbox, mailbox_data, PAGE_WRITABLE);
-    heap_init(&pcb->heap, heap, heap_pages, PAGE_WRITABLE | PAGE_USER_MODE);
+    //heap_init(&pcb->heap, heap, heap_pages, PAGE_WRITABLE | PAGE_USER_MODE);
 
     // Map certain system structs into memory
     if (map_system) {
@@ -152,7 +170,6 @@ u32 exec_sun(const char *name, int arg, bool map_system) {
 
     set_page_dir(old_page_dir);
 
-    u32 pid = next_free_aid();
     Process *p = pool_create(&process_pool);
     p->page_dir_paddr = page_dir;
     p->blocked = false;
@@ -237,7 +254,6 @@ SyscallResult syscall_send_message(
     u8 message_size = data_size & 0xFF;
     char message_cpy[256];
     pmemcpy(message_cpy, data, message_size);
-    message_cpy[message_size] = '\0';
     i32 sender_pid = GET_PID(current);
 
     // Switch address space
@@ -326,8 +342,6 @@ void processes_init() {
     pool_init(&process_pool);
     rb_init(&process_tree);
     queue_init(&run_queue);
-
-    printk(DEBUG, "%p", (void *) SYSTEM_PAGES);
 
     register_syscall(0, syscall_send_message);
     register_syscall(1, syscall_read_message);

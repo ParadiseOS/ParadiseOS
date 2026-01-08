@@ -104,6 +104,7 @@ void terminal_printf(const char *fmt, ...) {
 SyscallResult syscall_print_slice_string(char *s, u32 n) {
     for (u32 i = 0; i < n; i++) {
         terminal_putchar(s[i]);
+        serial_write(s[i]);
     }
 
     SYSCALL_RET(0);
@@ -111,6 +112,9 @@ SyscallResult syscall_print_slice_string(char *s, u32 n) {
 
 SyscallResult syscall_print_string(char *s) {
     terminal_printf("%s", s);
+    while(*s++) {
+        serial_write(*s);
+    } 
     SYSCALL_RET(0);
 }
 
