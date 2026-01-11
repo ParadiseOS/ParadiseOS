@@ -1,6 +1,5 @@
 *.iso
 *.bin
 *.sun
-.clangd
 /.vscode
 logging/*
