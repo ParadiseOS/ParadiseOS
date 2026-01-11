@@ -9,7 +9,8 @@
  * */
 #define KERNEL_ASSERT(condition)                                               \
     do {                                                                       \
-        if (!(condition)) {                                                    \
+        if (condition) {}                                                      \
+        else {                                                                 \
             printk(                                                            \
                 CRITICAL, __FILE__ ":%u Assertion Failed: " #condition,        \
                 __LINE__                                                       \
