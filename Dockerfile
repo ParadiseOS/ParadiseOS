@@ -26,15 +26,15 @@ RUN mkdir gcc
 WORKDIR binutils
 RUN ../binutils-2.41/configure --target=$TARGET --prefix=$PREFIX \
     --with-sysroot --disable-nls --disable-werror
-RUN make
+RUN make -j$(nproc)
 RUN make install
 
 # Build gcc
 WORKDIR ../gcc
 RUN ../gcc-13.2.0/configure --target=$TARGET --prefix=$PREFIX --disable-nls \
     --enable-languages=c --without-headers
-RUN make -j 8 all-gcc
-RUN make all-target-libgcc
+RUN make -j$(nproc) all-gcc
+RUN make -j$(nproc) all-target-libgcc
 RUN make install-gcc
 RUN make install-target-libgcc
 

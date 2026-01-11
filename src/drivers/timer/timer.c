@@ -47,7 +47,7 @@ void toggle_timer_callback(bool enable) {
 SyscallResult
 syscall_reg_tmr_cb(void (*callback)(InterruptRegisters *regs), u32 ticks) {
     if (ticks == 0)
-        SYSCALL_ERR(1);
+        SYSCALL_ERR(ERR_INVALID_INPUT);
     sched_callback = callback;
     last_callback = callback;
     sched_ticks = ticks;

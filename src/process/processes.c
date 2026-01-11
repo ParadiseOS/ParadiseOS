@@ -316,7 +316,7 @@ SyscallResult syscall_delete_process(u32 pid) {
         pool_destroy(&process_pool, proc);
     }
 
-    SYSCALL_ERR(PID_NOT_FOUND);
+    SYSCALL_ERR(ERR_PID_NOT_FOUND);
 }
 
 SyscallResult syscall_jump_process(u32 pid) {

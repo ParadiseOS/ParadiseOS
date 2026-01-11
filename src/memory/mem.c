@@ -223,8 +223,8 @@ RESULT unmap_page(void *vaddr, u32 *entry) {
     return false;
 }
 
-// Swaps the backing frames of two already allocated pages. Permissions remain
-// the same for each page.
+// Swaps the backing frames of two already allocated pages. Permissions are not
+// swapped.
 void swap_page_frames(void *vaddr1, void *vaddr2) {
     EntryInfo info1 = get_entry_info(vaddr1);
     EntryInfo info2 = get_entry_info(vaddr2);
@@ -603,25 +603,18 @@ bool user_frame_valid(u32 paddr) {
     return false;
 }
 
-#define GET_PHYS_MAP_INVALID_PTR 1
-
 // Returns a pointer to information about the physically available memory on the
 // system. Writes the number of entries to `n_ptr`. Each entry contains a
 // physical address and size in bytes.
 SyscallResult syscall_get_phys_map(u32 n_ptr) {
     u32 *n = validate_user_writable(n_ptr);
     if (!n)
-        SYSCALL_ERR(GET_PHYS_MAP_INVALID_PTR);
+        SYSCALL_ERR(ERR_INVALID_INPUT);
 
     *n = user_physical_map_len;
 
     SYSCALL_RET((u32) user_physical_map);
 }
-
-#define VIRT_MAP_PID_NOT_FOUND  1
-#define VIRT_MAP_ALREADY_MAPPED 2
-#define VIRT_MAP_INVALID_PTR    3
-#define VIRT_MAP_INVALID_PADDR  4
 
 // Converts syscall API flags to page table flags
 static u16 get_pte_flags(u16 flags) {
@@ -641,11 +634,11 @@ syscall_virt_map(u32 aid, u32 vaddr, u32 paddr_ptr, u32 n, u32 flags) {
     if (aid >> 16 == 0) // aid must be 16 bit
         process = get_process(aid);
     if (!process)
-        SYSCALL_ERR(VIRT_MAP_PID_NOT_FOUND);
+        SYSCALL_ERR(ERR_PID_NOT_FOUND);
 
     u32 *paddr = validate_user_readable(paddr_ptr);
     if (!paddr)
-        SYSCALL_ERR(VIRT_MAP_INVALID_PTR);
+        SYSCALL_ERR(ERR_INVALID_INPUT);
 
     u32 pte_flags = get_pte_flags(flags);
     u32 old_pd_paddr = get_page_dir();
@@ -655,11 +648,11 @@ syscall_virt_map(u32 aid, u32 vaddr, u32 paddr_ptr, u32 n, u32 flags) {
         void *page_vaddr = (void *) vaddr + i * PAGE_SIZE;
         if (entry_present(get_entry(page_vaddr))) {
             set_page_dir(old_pd_paddr);
-            SYSCALL_ERR(VIRT_MAP_ALREADY_MAPPED);
+            SYSCALL_ERR(ERR_ENT_EXISTS);
         }
         if (!user_frame_valid(paddr[i])) {
             set_page_dir(old_pd_paddr);
-            SYSCALL_ERR(VIRT_MAP_INVALID_PADDR);
+            SYSCALL_ERR(ERR_INVALID_INPUT);
         }
     }
 
@@ -672,10 +665,6 @@ syscall_virt_map(u32 aid, u32 vaddr, u32 paddr_ptr, u32 n, u32 flags) {
     SYSCALL_RET(0);
 }
 
-#define VIRT_UNMAP_PID_NOT_FOUND 1
-#define VIRT_UNMAP_NOT_MAPPED    2
-#define VIRT_UNMAP_INVALID_PTR   3
-
 // Unmaps a region of `n` contiguous pages in the address space specified by
 // `aid` starding at `vaddr`. Returns the backing physical pages into the array
 // of size `n` specified by `paddr_ptr`.
@@ -684,11 +673,11 @@ SyscallResult syscall_virt_unmap(u32 aid, u32 vaddr, u32 paddr_ptr, u32 n) {
     if (aid >> 16 == 0) // aid must be 16 bit
         process = get_process(aid);
     if (!process)
-        SYSCALL_ERR(VIRT_UNMAP_PID_NOT_FOUND);
+        SYSCALL_ERR(ERR_PID_NOT_FOUND);
 
     u32 *paddr = validate_user_writable(paddr_ptr);
     if (!paddr)
-        SYSCALL_ERR(VIRT_UNMAP_INVALID_PTR);
+        SYSCALL_ERR(ERR_INVALID_INPUT);
 
     u32 old_pd_paddr = get_page_dir();
     set_page_dir(process->page_dir_paddr);
@@ -697,7 +686,7 @@ SyscallResult syscall_virt_unmap(u32 aid, u32 vaddr, u32 paddr_ptr, u32 n) {
         void *page_vaddr = (void *) vaddr + i * PAGE_SIZE;
         if (!entry_present(get_entry(page_vaddr))) {
             set_page_dir(old_pd_paddr);
-            SYSCALL_ERR(VIRT_UNMAP_NOT_MAPPED);
+            SYSCALL_ERR(ERR_ENT_NOT_FOUND);
         }
     }
 
@@ -712,10 +701,6 @@ SyscallResult syscall_virt_unmap(u32 aid, u32 vaddr, u32 paddr_ptr, u32 n) {
     SYSCALL_RET(0);
 }
 
-#define VIRT_TRANSFER_PID_INVALID   1
-#define VIRT_TRANSFER_VADDR_INVALID 2
-#define VIRT_TRANSFER_TOO_LARGE     3
-
 SyscallResult
 syscall_virt_transfer(void *vaddr_src, void *vaddr_dst, u32 aid_pair, u32 n) {
     u32 *entries = (u32 *) temp_buffer;
@@ -727,7 +712,7 @@ syscall_virt_transfer(void *vaddr_src, void *vaddr_dst, u32 aid_pair, u32 n) {
     // it becomes an issue, we can allocate space on the kernel heap or
     // something to do larger transfers.
     if (n > entries_len)
-        SYSCALL_ERR(VIRT_TRANSFER_TOO_LARGE);
+        SYSCALL_ERR(ERR_OP_TOO_LARGE);
 
     u32 aid_src = aid_pair & 0xFFFF;
     u32 aid_dst = (aid_pair >> 16) & 0xFFFF;
@@ -736,7 +721,7 @@ syscall_virt_transfer(void *vaddr_src, void *vaddr_dst, u32 aid_pair, u32 n) {
     Process *proc_dst = get_process(aid_dst);
 
     if (!proc_src || !proc_dst)
-        SYSCALL_ERR(VIRT_TRANSFER_PID_INVALID);
+        SYSCALL_ERR(ERR_PID_NOT_FOUND);
 
     u32 old_pd_paddr = get_page_dir();
     set_page_dir(proc_src->page_dir_paddr);
@@ -745,7 +730,7 @@ syscall_virt_transfer(void *vaddr_src, void *vaddr_dst, u32 aid_pair, u32 n) {
         void *page_vaddr = (void *) vaddr_src + i * PAGE_SIZE;
         if (!entry_present(get_entry(page_vaddr))) {
             set_page_dir(old_pd_paddr);
-            SYSCALL_ERR(VIRT_TRANSFER_VADDR_INVALID);
+            SYSCALL_ERR(ERR_INVALID_INPUT);
         }
     }
 
@@ -757,12 +742,12 @@ syscall_virt_transfer(void *vaddr_src, void *vaddr_dst, u32 aid_pair, u32 n) {
     set_page_dir(proc_dst->page_dir_paddr);
 
     void *vaddr_final = vaddr_dst;
-    u32 error = 0;
+    u32 error = ERR_OK;
 
     for (u32 i = 0; i < n; ++i) {
         void *page_vaddr = (void *) vaddr_dst + i * PAGE_SIZE;
         if (entry_present(get_entry(page_vaddr))) {
-            error = VIRT_TRANSFER_VADDR_INVALID;
+            error = ERR_INVALID_INPUT;
             break;
         }
     }
