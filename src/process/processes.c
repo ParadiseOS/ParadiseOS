@@ -287,7 +287,6 @@ SyscallResult syscall_send_message(
     SYSCALL_RET(res);
 }
 
-#define PID_NOT_FOUND 1
 u32 jump_process(u32 pid) {
     Process *proc = get_process(get_pid_aid(pid));
     if (proc) {
@@ -297,7 +296,7 @@ u32 jump_process(u32 pid) {
         jump_usermode((void (*)()) pcb->eip, (void *) pcb->esp, pcb);
     }
 
-    return PID_NOT_FOUND;
+    return ERR_PID_NOT_FOUND;
 }
 
 SyscallResult syscall_register_process() {
