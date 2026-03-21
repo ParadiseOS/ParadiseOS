@@ -112,9 +112,9 @@ SyscallResult syscall_print_slice_string(char *s, u32 n) {
 
 SyscallResult syscall_print_string(char *s) {
     terminal_printf("%s", s);
-    while(*s++) {
+    while (*s++) {
         serial_write(*s);
-    } 
+    }
     SYSCALL_RET(0);
 }
 

@@ -1,9 +1,8 @@
-#include <paradise/logging.h>
 #include <paradise/error.h>
 #include <paradise/libp.h>
-#include <paradise/sun.h>
+#include <paradise/logging.h>
 #include <paradise/mem.h>
-
+#include <paradise/sun.h>
 
 extern SunFile sun_file;
 
@@ -13,7 +12,7 @@ static u32 MAGIC_LEN = sizeof(MAGIC) - 1;
 void sun_init() {
     KERNEL_ASSERT(pmemeql(sun_file.magic, MAGIC, MAGIC_LEN));
 
-    //Assert the file ins't too large
+    // Assert the file ins't too large
     KERNEL_ASSERT(sunfile_size() / PAGE_SIZE < MAX_SUNFILE_PAGES);
 }
 
@@ -28,15 +27,13 @@ TableEntry *sun_exe_lookup(const char *name) {
 
 u32 sunfile_size() {
     TableEntry *last_entry = &sun_file.entries[sun_file.n - 1];
-    
-    u32 entry_data_size = last_entry->text_size + 
-                          last_entry->rodata_size + 
-                          last_entry->data_size + 
-                          last_entry->bss_size;
 
-    u32 offset = last_entry -> offset;
+    u32 entry_data_size = last_entry->text_size + last_entry->rodata_size +
+                          last_entry->data_size + last_entry->bss_size;
+
+    u32 offset = last_entry->offset;
     u32 size = offset + entry_data_size;
-    
+
     return size;
 }
 
