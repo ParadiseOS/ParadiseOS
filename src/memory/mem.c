@@ -422,7 +422,7 @@ void init_frames() {
                     .len = entries[i].length_lo - kernel_share,
                 };
 
-                //Make sure user space doesn't intersect with kernel
+                // Make sure user space doesn't intersect with kernel
                 KERNEL_ASSERT(
                     entries[i].base_addr_lo + kernel_share > kernel_end_paddr
                 );

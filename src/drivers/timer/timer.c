@@ -27,7 +27,7 @@ void timer_handler(InterruptRegisters *regs) {
     if (sched_tick_cur == 0) {
         sched_tick_cur = sched_ticks;
         if (sched_callback) {
-            toggle_timer_callback(false); // Turn Timer Callbacks off 
+            toggle_timer_callback(false); // Turn Timer Callbacks off
             preempt(regs);
         }
     }

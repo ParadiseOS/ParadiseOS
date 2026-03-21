@@ -3,8 +3,8 @@
 
 #include "types.h"
 
-#define MAX_SUNFILE_PAGES 8 //Kernel assertion will fail if more than this number of pages is present
-
+// Kernel assertion will fail if more than this number of pages is present
+#define MAX_SUNFILE_PAGES 8
 
 typedef struct {
     char name[16];

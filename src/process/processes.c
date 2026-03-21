@@ -10,11 +10,11 @@
 #include <paradise/processes.h>
 #include <paradise/queue.h>
 #include <paradise/rb_tree.h>
+#include <paradise/shared/system.h>
 #include <paradise/sun.h>
 #include <paradise/syscall.h>
 #include <paradise/timer.h>
 #include <paradise/util.h>
-#include <paradise/shared/system.h>
 
 #define ROOT_PROCESS 1 << 16
 
@@ -25,7 +25,7 @@
 #define MAILBOX_DATA_ADDR (PROCESS_ORG - (PAGE_SIZE * MAILBOX_RESERVED))
 #define PCB_ADDR          (MAILBOX_DATA_ADDR - PAGE_SIZE)
 #define SYSTEM_PAGE       (PCB_ADDR - PAGE_SIZE)
-#define SUNFILE_PAGES                                                           \
+#define SUNFILE_PAGES                                                          \
     (SYSTEM_PAGE - PAGE_SIZE * MAX_SUNFILE_PAGES) // TODO: Allocate pages
 
 #define INIT_EFLAGS 0b1000000010
@@ -107,7 +107,7 @@ u32 exec_sun(const char *name, int arg, bool map_system) {
 
     KERNEL_ASSERT(entry && entry->text_size);
 
-    u32 pid = next_free_aid(); //TODO: Refactor to use proper vocab
+    u32 pid = next_free_aid(); // TODO: Refactor to use proper vocab
 
     void *text = PROCESS_ORG;
     void *rodata = align_next_page(text + entry->text_size - 1);
@@ -131,25 +131,25 @@ u32 exec_sun(const char *name, int arg, bool map_system) {
         alloc_pages(bss, RW_FLAGS, (heap - bss) / PAGE_SIZE);
     alloc_pages(stack - STACK_SIZE, RW_FLAGS, STACK_SIZE / PAGE_SIZE);
     alloc_pages(pcb, PAGE_WRITABLE, 1);
-    alloc_pages(SYSTEM_PAGE, RO_FLAGS, 1); 
+    alloc_pages(SYSTEM_PAGE, RO_FLAGS, 1);
 
     sun_load_text(entry, text);
     sun_load_rodata(entry, rodata);
     sun_load_data(entry, data);
     pmemset(bss, 0, entry->bss_size);
 
-    //push SYSTEM PAGE location onto stack
+    // push SYSTEM PAGE location onto stack
     stack -= 4;
-    *(SystemInfo **)(stack) = SYSTEM_PAGE;
+    *(SystemInfo **) (stack) = SYSTEM_PAGE;
 
-    SystemInfo * sys = SYSTEM_PAGE;
+    SystemInfo *sys = SYSTEM_PAGE;
     sys->pid = pid;
-    sys->page_size  = PAGE_SIZE;
-    sys->stack_top  = STACK_TOP;
+    sys->page_size = PAGE_SIZE;
+    sys->stack_top = STACK_TOP;
     sys->stack_size = STACK_SIZE;
     sys->heap_start = heap;
     sys->heap_pages = heap_pages;
-    sys->sunfile    = SUNFILE_PAGES;
+    sys->sunfile = SUNFILE_PAGES;
 
     pcb->prog_brk = heap;
     pcb->eip = (u32) entry->entry_point;
@@ -161,7 +161,7 @@ u32 exec_sun(const char *name, int arg, bool map_system) {
     pmemset(pcb->fpu_regs, 0, /*fpu_regs size*/ 512);
 
     mailbox_init(&pcb->mailbox, mailbox_data, PAGE_WRITABLE);
-    //heap_init(&pcb->heap, heap, heap_pages, PAGE_WRITABLE | PAGE_USER_MODE);
+    // heap_init(&pcb->heap, heap, heap_pages, PAGE_WRITABLE | PAGE_USER_MODE);
 
     // Map certain system structs into memory
     if (map_system) {
