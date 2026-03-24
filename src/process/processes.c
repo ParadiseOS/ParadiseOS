@@ -87,7 +87,6 @@ static u32 next_free_aid() {
 }
 
 void map_sunfile() {
-
     void *sun_file_vaddr = (void *) &sun_file;
     void *proc_sys_file = (void *) SUNFILE_PAGES;
     u32 size = sunfile_size();
