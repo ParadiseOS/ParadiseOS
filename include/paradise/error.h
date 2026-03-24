@@ -3,6 +3,9 @@
 
 #include "logging.h"
 
+#define STR_IMPL(x) #x
+#define STR(x) STR_IMPL(x)
+
 /**
  *  Assert that some condition holds. Log and panic otherwise. Note that logging
  *  depends on the terminal or serial port being successfully initialized.
@@ -12,8 +15,8 @@
         if (condition) {}                                                      \
         else {                                                                 \
             printk(                                                            \
-                CRITICAL, __FILE__ ":%u Assertion Failed: " #condition,        \
-                __LINE__                                                       \
+                CRITICAL,                                                      \
+                __FILE__ ":" STR(__LINE__) "Assertion Failed: " #condition     \
             );                                                                 \
             kernel_panic();                                                    \
         }                                                                      \
