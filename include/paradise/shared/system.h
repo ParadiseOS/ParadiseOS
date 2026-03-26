@@ -1,3 +1,8 @@
+#ifndef SYSTEM_H_
+#define SYSTEM_H_
+
+#include <paradise/types.h>
+
 typedef struct {
     u32 pid;
     u32 page_size;
@@ -7,3 +12,5 @@ typedef struct {
     u32 heap_pages;   // End of "Free" / Unmapped vaddr space
     void *sunfile;
 } SystemInfo;
+
+#endif // SYSTEM_H_

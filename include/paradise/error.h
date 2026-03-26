@@ -16,7 +16,7 @@
         else {                                                                 \
             printk(                                                            \
                 CRITICAL,                                                      \
-                __FILE__ ":" STR(__LINE__) "Assertion Failed: " #condition     \
+                __FILE__ ":" STR(__LINE__) ": Assertion Failed: " #condition   \
             );                                                                 \
             kernel_panic();                                                    \
         }                                                                      \
