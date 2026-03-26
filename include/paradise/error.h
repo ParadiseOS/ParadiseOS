@@ -4,7 +4,7 @@
 #include "logging.h"
 
 #define STR_IMPL(x) #x
-#define STR(x) STR_IMPL(x)
+#define STR(x)      STR_IMPL(x)
 
 /**
  *  Assert that some condition holds. Log and panic otherwise. Note that logging
