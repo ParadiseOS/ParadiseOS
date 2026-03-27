@@ -210,7 +210,7 @@ static void save_context_syscall(CpuContext *ctx) {
 void syscall_handler(CpuContext *ctx) {
     current_ctx = ctx;
     if (!dispatch_syscall(ctx))
-        printk(DEBUG, "Unknown syscall :(\n");
+        printk(DEBUG, "Unknown syscall %u :(\n", ctx->eax);
     current_ctx = NULL;
 }
 
