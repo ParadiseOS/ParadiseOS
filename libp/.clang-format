@@ -1,0 +1,12 @@
+IndentWidth: 4
+UseTab: Never
+AlignConsecutiveMacros: true
+SpaceAfterCStyleCast: true
+SpaceBeforeCpp11BracedList: true
+AlignAfterOpenBracket: BlockIndent
+Cpp11BracedListStyle: true
+BreakBeforeBraces: Custom
+BraceWrapping:
+    BeforeElse: true
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortBlocksOnASingleLine: Empty
