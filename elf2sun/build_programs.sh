@@ -1,5 +1,9 @@
 #!/usr/bin/env sh
 
+# Meson output dir
+WORKSPACE="/workspace"
+MESON_BUILD_DIR="$WORKSPACE/build/elf2sun"
+
 echo "Building elf2sun"
 gcc elf2sun.c -o elf2sun
 
@@ -28,8 +32,8 @@ for dir in programs/*/; do
   fi
 done
 
-# Run elf2sun with all .out files in build/
-echo "Running elf2sun with output files in build/"
-./elf2sun build/*.out
+# Run elf2sun with all .out files in meson build/
+echo "Running elf2sun with output files in $MESON_BUILD_DIR/"
+./elf2sun $MESON_BUILD_DIR/*.out
 
 # To build in 32 bit you need multilib gcc

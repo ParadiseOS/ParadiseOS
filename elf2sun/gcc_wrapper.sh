@@ -3,7 +3,9 @@
 # Assuming  is ran in program/"program_name"
 PROGRAMS_DIR=".." 
 ROOT_DIR="../.."
-BUILD_DIR="$ROOT_DIR/build"
+WORKSPACE="/workspace"
+BUILD_DIR="$WORKSPACE/build/elf2sun"
+LIBP_BUILD_DIR="$WORKSPACE/build/libp"
 
 # Ensure C source file
 if [ -z "$1" ] || [ "$1" != *.c ]; then
@@ -18,6 +20,8 @@ BUILD_FILE="$BUILD_DIR/$PROGRAM_NAME.out"
 
 echo "Building $PROGRAM_NAME with gcc_wrapper.sh"
 
+mkdir -p "$BUILD_DIR"
+
 /usr/bin/gcc \
     -c "$SOURCE_FILE" \
     -o "$OBJ_FILE" \
@@ -26,7 +30,7 @@ echo "Building $PROGRAM_NAME with gcc_wrapper.sh"
     -fno-asynchronous-unwind-tables \
     -m32 \
     -masm=intel \
-    -I$ROOT_DIR/../libp/include/
+    -I$WORKSPACE/libp/include/
 
 if [ $? -ne 0 ]; then
     echo "Compilation failed."
@@ -35,8 +39,8 @@ fi
 
 /usr/bin/gcc \
     "$OBJ_FILE" \
-    "$PROGRAMS_DIR/libp.o" \
-    "$PROGRAMS_DIR/start.o" \
+    "$LIBP_BUILD_DIR/libp.o" \
+    "$LIBP_BUILD_DIR/start.o" \
     -T "$PROGRAMS_DIR/linker.ld" \
     -o "$BUILD_FILE" \
     -m32 -static -nostdlib \

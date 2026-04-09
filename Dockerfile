@@ -38,6 +38,10 @@ RUN make -j$(nproc) all-target-libgcc
 RUN make install-gcc
 RUN make install-target-libgcc
 
+# Install Meson and Ninja
+RUN apt-get update && apt-get install -y python3 python3-pip ninja-build
+RUN pip3 install meson
+
 WORKDIR /usr/app
 RUN mkdir scripts
 RUN mkdir elf2sun

@@ -1,6 +1,5 @@
 #include "pio.h"
 #include "psyscall.h"
-#include "syscall.h"
 #include "types.h"
 #include <stdarg.h>
 

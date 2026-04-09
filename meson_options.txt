@@ -1,0 +1,4 @@
+option('tests_enabled', type: 'boolean', value: false, description: 'Enable tests')
+option('build_programs', type: 'boolean', value: false, description: 'Build elf2sun programs')
+option('build_libp', type: 'boolean', value: false, description: 'Build libp')
+option('log_level', type: 'string', value: '', description: 'Log level (INFO, DEBUG, CRITICAL)')
