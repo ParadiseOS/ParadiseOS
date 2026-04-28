@@ -2,7 +2,7 @@
 set -e
 export PATH="/usr/app/cross-compiler/bin:$PATH"
 
-MESON_ARGS=""
+MESON_ARGS="-Dtests_enabled=false"
 FORCE_SETUP=false
 
 ### Arguments Checker
@@ -13,11 +13,7 @@ do
     -S|--setup)
         FORCE_SETUP=true ;;
     -t|--tests)
-        MESON_ARGS="$MESON_ARGS -Dtests_enabled=true" ;;
-    -b|--build_programs)
-        MESON_ARGS="$MESON_ARGS -Dbuild_programs=true" ;;
-    -l|--libp)
-        MESON_ARGS="$MESON_ARGS -Dbuild_libp=true" ;;
+        MESON_ARGS="$(echo $MESON_ARGS | sed 's/-Dtests_enabled=false/-Dtests_enabled=true/')" ;;
     -L|--log)
             if [ -n "$2" ] && ! expr "$2" : '-.*' > /dev/null; then
                 MESON_ARGS="$MESON_ARGS -Dlog_level=$(echo "$2" | tr '[:lower:]' '[:upper:]')"

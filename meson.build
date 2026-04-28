@@ -8,16 +8,6 @@ if get_option('tests_enabled')
     add_project_arguments('-DTESTS_ENABLED', language: 'c')
 endif
 
-# Helper Modules
-if get_option('build_libp')
-    subdir('libp')
-endif
-
-if get_option('build_programs')
-    subdir('elf2sun')
-endif
-
-
 log_level = get_option('log_level')
 if log_level == 'INFO'
     add_project_arguments('-DLOG_INFO', language: 'c')
@@ -26,6 +16,9 @@ elif log_level == 'DEBUG'
 elif log_level == 'CRITICAL'
     add_project_arguments('-DLOG_CRITICAL', language: 'c')
 endif
+
+subdir('libp')
+subdir('elf2sun')
 
 # Kernel Sources
 c_sources = files(
@@ -73,13 +66,8 @@ fasm_gen = generator(fasm,
 asm_objects = fasm_gen.process(s_sources)
 
 # Sun.s
-sun_deps = []
-sun_bin_path = 'binary.sun'
-
-if get_option('build_programs')
-    sun_deps += user_programs
-    sun_bin_path = user_programs
-endif
+sun_deps = [user_programs]
+sun_bin_path = user_programs
 
 sun_obj = custom_target('sun.s.o',
     input: 'src/sun/sun.s',

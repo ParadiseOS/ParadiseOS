@@ -1,8 +1,4 @@
-deps = []
-
-if get_option('build_libp')
-    deps += [libp_obj, pmath_obj, start_obj]
-endif
+deps = [libp_obj, pmath_obj, start_obj]
 
 user_programs = custom_target('sun_programs',
     output: 'binary.sun',
