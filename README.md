@@ -14,9 +14,9 @@ docker build -t paradise-os .
 
 To build with tests enabled add flag `--tests` or `-t`
 
-To build elf2sun programs before paradise add flag `--build_programs` or `-b`
+To build with different log levels add flag `--log [level]` or `-L [level]`
 
-To build libp for use with programs add flag `--libp` or `-l`
+- There are 3 log levels: CRITICAL, INFO, DEBUG (in precedence order)
 
 **Running the OS**
 

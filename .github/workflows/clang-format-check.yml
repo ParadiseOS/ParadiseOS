@@ -9,6 +9,8 @@ jobs:
         path:
           - 'src'
           - 'include'
+          - 'libp'
+          - 'elf2sun'
     steps:
     - uses: actions/checkout@v4
     - name: Run clang-format style check for source and include files.

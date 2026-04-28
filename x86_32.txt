@@ -1,0 +1,12 @@
+# Used by Meson to find and use cross compilation binaries
+[binaries]
+c = '/usr/app/cross-compiler/bin/i686-elf-gcc'
+ld = '/usr/app/cross-compiler/bin/i686-elf-ld'
+strip = '/usr/app/cross-compiler/bin/i686-elf-strip'
+fasm = 'fasm'
+
+[host_machine]
+system = 'baremetal'
+cpu_family = 'x86'
+cpu = 'i686'
+endian = 'little'

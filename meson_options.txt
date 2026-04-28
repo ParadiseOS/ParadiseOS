@@ -1,0 +1,2 @@
+option('tests_enabled', type: 'boolean', value: false, description: 'Enable tests')
+option('log_level', type: 'string', value: '', description: 'Log level (INFO, DEBUG, CRITICAL)')

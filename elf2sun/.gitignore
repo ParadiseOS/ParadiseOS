@@ -1,0 +1,10 @@
+elf2sun
+binary.sun
+
+build/*
+!build/.keep
+
+programs/*
+!programs/linker.ld
+!programs/.keep
+!programs/example_build.sh
