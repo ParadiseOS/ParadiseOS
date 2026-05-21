@@ -27,7 +27,6 @@ typedef struct {
     u32 eip;
 
     void *prog_brk;
-    u32 page_dir_paddr;
 
     u8 fpu_regs[512] __attribute__((aligned(16)));
 

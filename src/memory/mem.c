@@ -43,6 +43,7 @@ u32 *page_table_entries = (u32 *) 0xFFC00000;
 // Flags for memory mapping from a syscall. We don't have user mode flags here
 // since the user can only map user-mode pages.
 #define VIRT_MAP_WRITABLE 1
+#define VIRT_MAP_KERNEL   2
 
 // Division of physical memory that is reserved
 // for the kernel
@@ -621,6 +622,8 @@ static u16 get_pte_flags(u16 flags) {
     u16 pte_flags = PTE_USER_MODE;
     if (flags & VIRT_MAP_WRITABLE)
         pte_flags |= PTE_WRITABLE;
+    if (flags & VIRT_MAP_KERNEL)
+        pte_flags ^= PTE_USER_MODE;
     return pte_flags;
 }
 
@@ -701,8 +704,9 @@ SyscallResult syscall_virt_unmap(u32 aid, u32 vaddr, u32 paddr_ptr, u32 n) {
     SYSCALL_RET(0);
 }
 
+//If dst_flags is 0xFF we will copy from the src
 SyscallResult
-syscall_virt_transfer(void *vaddr_src, void *vaddr_dst, u32 aid_pair, u32 n) {
+syscall_virt_transfer(void *vaddr_src, void *vaddr_dst, u32 aid_pair, u32 n, u32 dst_flag) {
     u32 *entries = (u32 *) temp_buffer;
     u32 entries_len = TEMP_BUFFER_LENGTH / sizeof(u32);
 
@@ -762,7 +766,7 @@ syscall_virt_transfer(void *vaddr_src, void *vaddr_dst, u32 aid_pair, u32 n) {
     for (u32 i = 0; i < n; ++i) {
         void *page_vaddr = (void *) vaddr_final + i * PAGE_SIZE;
         u32 paddr = get_paddr(entries[i]);
-        u16 flags = get_flags(entries[i]);
+        u16 flags = (dst_flag == 0xFF) ? get_flags(entries[i]) : dst_flag;
 
         KERNEL_ASSERT(!map_page(page_vaddr, paddr, flags));
     }

@@ -154,7 +154,6 @@ u32 exec_sun(const char *name, int arg, bool map_system) {
     pcb->eip = (u32) entry->entry_point;
     pcb->esp = (u32) stack;
     pcb->eflags = INIT_EFLAGS;
-    pcb->page_dir_paddr = page_dir;
     pcb->eax = arg;
 
     pmemset(pcb->fpu_regs, 0, /*fpu_regs size*/ 512);
@@ -183,7 +182,6 @@ void schedule() {
     KERNEL_ASSERT(current);
 
     set_page_dir(current->page_dir_paddr);
-    KERNEL_ASSERT(pcb->page_dir_paddr == current->page_dir_paddr);
     fpu_restore(pcb->fpu_regs);
     jump_usermode((void (*)()) pcb->eip, (void *) pcb->esp, pcb);
 }
@@ -222,7 +220,6 @@ bool is_user_mode(u32 cs) {
 //  Will the process servers stack continously grow?
 void preempt(InterruptRegisters *regs) {
     if (is_user_mode(regs->cs)) {
-        KERNEL_ASSERT(pcb->page_dir_paddr == current->page_dir_paddr);
         save_context_int(regs);
 
         Process *proc = get_process(get_pid_aid(ROOT_PROCESS));

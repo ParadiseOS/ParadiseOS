@@ -83,7 +83,7 @@ void kernel_main(void) {
     u32 mem_pid = exec_sun("memory.out", 0, true);
     KERNEL_ASSERT(mem_pid == (2 << 16)); // Process server is PID 1
 
-    exec_sun("screamer.out", 0, true); // Register our other file
+    //exec_sun("screamer.out", 0, true); // Register our other file
 
     asm("sti");
 
